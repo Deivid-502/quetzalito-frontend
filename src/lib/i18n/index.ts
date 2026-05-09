@@ -1,7 +1,6 @@
 'use client';
 
 export type { TranslationKey } from './es';
-export type { TranslationKey } from './en';
 import { es, type TranslationKey } from './es';
 import { en } from './en';
 import { useAuthStore } from '@/stores/auth.store';
