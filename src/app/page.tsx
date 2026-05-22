@@ -14,9 +14,12 @@ import {
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { LanguageToggle } from '@/components/i18n/LanguageToggle';
 import { useAuthStore } from '@/stores/auth.store';
+import { useT } from '@/lib/i18n';
 
 export default function LandingPage() {
+  const t = useT();
   const user = useAuthStore((s) => s.user);
   const initialized = useAuthStore((s) => s.initialized);
   const isAuthed = initialized && !!user;
@@ -27,22 +30,22 @@ export default function LandingPage() {
       <header className="sticky top-0 z-30 border-b surface border-ink-200 dark:border-ink-700">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Logo href="/" />
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-1 sm:gap-2">
+            <LanguageToggle />
             <ThemeToggle />
             {isAuthed ? (
-              // Usuario ya autenticado → CTA directo al dashboard
               <Link href="/dashboard">
                 <Button variant="primary" size="sm">
-                  Ir a mi dashboard <ArrowRight className="h-4 w-4" />
+                  {t('landing.goToDashboard')} <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             ) : (
               <>
                 <Link href="/login" className="hidden sm:block">
-                  <Button variant="ghost" size="sm">Iniciar sesión</Button>
+                  <Button variant="ghost" size="sm">{t('auth.signIn')}</Button>
                 </Link>
                 <Link href="/register">
-                  <Button variant="primary" size="sm">Crear cuenta</Button>
+                  <Button variant="primary" size="sm">{t('auth.signUp')}</Button>
                 </Link>
               </>
             )}
@@ -56,39 +59,37 @@ export default function LandingPage() {
           <div className="space-y-6">
             <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
               <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-              Hecho en Guatemala 🇬🇹
+              {t('landing.cta.guatemala')}
             </span>
             <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              Tu dinero,{' '}
-              <span className="text-brand-500">bajo control</span>.
+              {t('landing.heroTitle.part1')}{' '}
+              <span className="text-brand-500">{t('landing.heroTitle.part2')}</span>.
             </h1>
             <p className="max-w-xl text-lg text-muted">
-              Quetzalito te ayuda a registrar tus gastos, organizar tu dinero en alcancías
-              y alcanzar tus metas. Pensado para estudiantes y jóvenes que quieren
-              entender a dónde se va su quetzal.
+              {t('landing.heroSubtitle')}
             </p>
             <div className="flex flex-wrap items-center gap-3">
               {isAuthed ? (
                 <Link href="/dashboard">
                   <Button size="lg" variant="primary">
-                    Continuar a mi cuenta <ArrowRight className="h-4 w-4" />
+                    {t('landing.continue')} <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
               ) : (
                 <>
                   <Link href="/register">
                     <Button size="lg" variant="primary">
-                      Empezar gratis <ArrowRight className="h-4 w-4" />
+                      {t('landing.startFree')} <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
                   <Link href="/login">
-                    <Button size="lg" variant="secondary">Ya tengo cuenta</Button>
+                    <Button size="lg" variant="secondary">{t('landing.haveAccount')}</Button>
                   </Link>
                 </>
               )}
             </div>
             <p className="text-xs text-muted">
-              Gratis para siempre · Sin tarjeta de crédito · Premium opcional
+              {t('landing.freeTagline')}
             </p>
           </div>
 
@@ -113,44 +114,43 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold sm:text-4xl">
-              Todo lo que necesitás para tomar el control
+              {t('landing.featuresTitle')}
             </h2>
             <p className="mt-4 text-muted">
-              Pensado para que registrar un gasto te tome menos de 5 segundos y entender
-              tus finanzas, menos de 5 minutos.
+              {t('landing.featuresSubtitle')}
             </p>
           </div>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <Feature
               icon={<Wallet className="h-6 w-6 text-brand-500" />}
-              title="Alcancías inteligentes"
-              text="Organizá tu dinero en sobres con propósito: comida, ahorro, viaje. Cada quetzal con destino claro."
+              title={t('landing.feature.envelopes.title')}
+              text={t('landing.feature.envelopes.text')}
             />
             <Feature
               icon={<TrendingUp className="h-6 w-6 text-brand-500" />}
-              title="Límite diario"
-              text="Sabé cuánto podés gastar hoy según tu saldo y los días que faltan del mes."
+              title={t('landing.feature.dailyLimit.title')}
+              text={t('landing.feature.dailyLimit.text')}
             />
             <Feature
               icon={<PieChart className="h-6 w-6 text-brand-500" />}
-              title="Estadísticas claras"
-              text="Gráficas por categoría que te muestran a dónde se va realmente tu dinero."
+              title={t('landing.feature.stats.title')}
+              text={t('landing.feature.stats.text')}
             />
             <Feature
               icon={<PiggyBank className="h-6 w-6 text-brand-500" />}
-              title="Metas de ahorro"
-              text="Definí cuánto querés juntar y mirá tu progreso semana a semana."
+              title={t('landing.feature.goals.title')}
+              text={t('landing.feature.goals.text')}
             />
             <Feature
               icon={<Smartphone className="h-6 w-6 text-brand-500" />}
-              title="Listo para móvil"
-              text="Funciona en tu celular como una app instalable. Llévalo en el bolsillo."
+              title={t('landing.feature.mobile.title')}
+              text={t('landing.feature.mobile.text')}
             />
             <Feature
               icon={<ShieldCheck className="h-6 w-6 text-brand-500" />}
-              title="Seguro por diseño"
-              text="Tus datos viajan cifrados y solo vos los ves. Sesiones aisladas y protegidas."
+              title={t('landing.feature.secure.title')}
+              text={t('landing.feature.secure.text')}
             />
           </div>
         </div>
@@ -160,17 +160,17 @@ export default function LandingPage() {
       <section className="border-t border-ink-200 dark:border-ink-700 bg-ink-50/40 dark:bg-ink-900/30">
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold sm:text-4xl">Precio justo, valor real</h2>
+            <h2 className="text-3xl font-bold sm:text-4xl">{t('landing.pricingTitle')}</h2>
             <p className="mt-4 text-muted">
-              Empezá gratis. Cuando sintás que necesitás más, da el paso.
+              {t('landing.pricingSubtitle')}
             </p>
           </div>
 
           <div className="mx-auto mt-12 grid max-w-3xl gap-6 sm:grid-cols-2">
             <PricingCard
-              title="Free"
+              title={t('settings.planFree')}
               price="Q0"
-              tagline="Para empezar a tomar el control"
+              tagline={t('landing.pricing.free.tagline')}
               isAuthed={isAuthed}
               isPremium={!!user?.isPremium}
               tier="free"
@@ -183,11 +183,12 @@ export default function LandingPage() {
               ]}
             />
             <PricingCard
-              title="Premium"
+              title={t('settings.planPremium')}
               price="Q19"
-              priceSuffix="/ mes"
-              tagline="Para quienes quieren más"
+              priceSuffix={t('premium.priceMonthly')}
+              tagline={t('landing.pricing.premium.tagline')}
               highlighted
+              recommendedLabel={t('landing.pricing.recommended')}
               isAuthed={isAuthed}
               isPremium={!!user?.isPremium}
               tier="premium"
@@ -211,31 +212,30 @@ export default function LandingPage() {
             <div>
               <Logo />
               <p className="mt-3 text-xs text-muted max-w-xs">
-                Plataforma de finanzas personales pensada para jóvenes guatemaltecos.
-                Tu dinero bajo control.
+                {t('footer.tagline')}
               </p>
             </div>
-            <FooterCol title="Producto">
-              <FooterLink href="/login">Iniciar sesión</FooterLink>
-              <FooterLink href="/register">Crear cuenta</FooterLink>
-              {isAuthed && <FooterLink href="/dashboard">Mi dashboard</FooterLink>}
+            <FooterCol title={t('footer.product')}>
+              <FooterLink href="/login">{t('auth.signIn')}</FooterLink>
+              <FooterLink href="/register">{t('auth.signUp')}</FooterLink>
+              {isAuthed && <FooterLink href="/dashboard">{t('landing.goToDashboard')}</FooterLink>}
             </FooterCol>
-            <FooterCol title="Legal">
-              <FooterLink href="/legal/privacidad">Privacidad</FooterLink>
-              <FooterLink href="/legal/terminos">Términos y condiciones</FooterLink>
-              <FooterLink href="/legal/cookies">Política de cookies</FooterLink>
-              <FooterLink href="/legal/reembolso">Política de reembolso</FooterLink>
+            <FooterCol title={t('footer.legal')}>
+              <FooterLink href="/legal/privacidad">{t('legal.privacy')}</FooterLink>
+              <FooterLink href="/legal/terminos">{t('legal.terms')}</FooterLink>
+              <FooterLink href="/legal/cookies">{t('legal.cookies')}</FooterLink>
+              <FooterLink href="/legal/reembolso">{t('legal.refund')}</FooterLink>
             </FooterCol>
-            <FooterCol title="Soporte">
-              <FooterLink href="/legal/contacto">Contacto</FooterLink>
+            <FooterCol title={t('footer.support')}>
+              <FooterLink href="/legal/contacto">{t('legal.contact')}</FooterLink>
             </FooterCol>
           </div>
           <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-ink-200 pt-6 dark:border-ink-700 sm:flex-row">
             <p className="text-xs text-muted">
-              © {new Date().getFullYear()} Quetzalito · Hecho con 💚 en Guatemala
+              {t('legal.copyright', { year: new Date().getFullYear() })}
             </p>
             <p className="text-xs text-muted">
-              Proyecto académico · No comercial
+              {t('footer.academicProject')}
             </p>
           </div>
         </div>
@@ -271,6 +271,7 @@ function PricingCard({
   tagline,
   features,
   highlighted,
+  recommendedLabel,
   isAuthed,
   isPremium,
   tier,
@@ -281,24 +282,23 @@ function PricingCard({
   tagline: string;
   features: string[];
   highlighted?: boolean;
+  recommendedLabel?: string;
   isAuthed: boolean;
   isPremium: boolean;
   tier: 'free' | 'premium';
 }) {
-  // Decide a dónde llevar al usuario según su estado y el tier:
-  //   · Sin sesión             → /register (cualquier tier)
-  //   · Logueado en Free       → si tier=free: /dashboard ; si tier=premium: /premium
-  //   · Logueado en Premium    → /dashboard (free) o /premium (gestión, ya tiene activo)
+  const t = useT();
+
   let href = '/register';
-  let label = 'Comenzar';
+  let label = t('landing.pricing.start');
 
   if (isAuthed) {
     if (tier === 'premium') {
       href = '/premium';
-      label = isPremium ? 'Mi plan' : 'Activar Premium';
+      label = isPremium ? t('landing.pricing.myPlan') : t('landing.pricing.activatePremium');
     } else {
       href = '/dashboard';
-      label = 'Ir a mi dashboard';
+      label = t('landing.pricing.goDashboard');
     }
   }
 
@@ -312,9 +312,9 @@ function PricingCard({
     >
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">{title}</h3>
-        {highlighted && (
+        {highlighted && recommendedLabel && (
           <span className="rounded-full bg-gold-500/20 px-2.5 py-1 text-xs font-semibold text-gold-600">
-            Recomendado
+            {recommendedLabel}
           </span>
         )}
       </div>

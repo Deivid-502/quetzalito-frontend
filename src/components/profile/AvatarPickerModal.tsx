@@ -155,7 +155,7 @@ export function AvatarPickerModal({ open, onClose, currentAvatar, initials, onPi
             onClick={() => setShowCustom((v) => !v)}
             className="text-sm text-brand-600 hover:underline"
           >
-            {showCustom ? '— Ocultar URL personalizada' : '+ ' + t('profile.useUrl')}
+            {showCustom ? `— ${t('profile.hideUrl')}` : '+ ' + t('profile.useUrl')}
           </button>
           {showCustom && (
             <div className="mt-3 flex gap-2">

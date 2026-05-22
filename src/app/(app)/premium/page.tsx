@@ -19,20 +19,34 @@ import { useAuthStore } from '@/stores/auth.store';
 import { toast } from '@/components/ui/Toaster';
 import { ApiError } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import { useT, useLanguage } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n';
 
-const PREMIUM_FEATURES = [
-  'Sobres ilimitados (sin límite de 5)',
-  'Sin anuncios',
-  'Categorías personalizadas avanzadas',
-  'Estadísticas extendidas con comparativas mes a mes',
-  'Exportación a PDF y Excel',
-  'Tips financieros personalizados',
-  'Soporte prioritario',
+function bcp47(lang: 'es' | 'en'): string {
+  return lang === 'es' ? 'es-GT' : 'en-US';
+}
+
+const PREMIUM_FEATURE_KEYS: TranslationKey[] = [
+  'premium.feature.envelopes',
+  'premium.feature.noAds',
+  'premium.feature.customCategories',
+  'premium.feature.extendedStats',
+  'premium.feature.export',
+  'premium.feature.tips',
+  'premium.feature.support',
+];
+
+const CANCEL_LOSES_KEYS: TranslationKey[] = [
+  'premium.cancelLoses.envelopes',
+  'premium.cancelLoses.features',
+  'premium.cancelLoses.ads',
 ];
 
 export default function PremiumPage() {
+  const t = useT();
+  const { language } = useLanguage();
   const router = useRouter();
-  const user = useAuthStore((s) => s.user);
+  const _user = useAuthStore((s) => s.user);
   const { status, loading, error, activate, cancel } = useSubscription();
   const [activateOpen, setActivateOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -50,26 +64,27 @@ export default function PremiumPage() {
     return (
       <Card>
         <CardContent>
-          <p className="text-sm text-danger">{error ?? 'No pudimos cargar tu plan.'}</p>
+          <p className="text-sm text-danger">{error ?? t('premium.loadError')}</p>
         </CardContent>
       </Card>
     );
   }
 
   const isPremium = status.isPremium;
+  const locale = bcp47(language);
 
   async function handleActivate() {
     setSubmitting(true);
     try {
       const res = await activate();
       const endsAt = res.subscription.endsAt
-        ? new Date(res.subscription.endsAt).toLocaleDateString('es-GT')
+        ? new Date(res.subscription.endsAt).toLocaleDateString(locale)
         : '';
-      toast.success(`Premium activado hasta el ${endsAt}. ¡Disfrutalo!`);
+      toast.success(t('premium.activatedToast', { date: endsAt }));
       setActivateOpen(false);
       router.push('/dashboard');
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'No pudimos activar Premium.');
+      toast.error(err instanceof ApiError ? err.message : t('premium.activateError'));
     } finally {
       setSubmitting(false);
     }
@@ -79,10 +94,10 @@ export default function PremiumPage() {
     setSubmitting(true);
     try {
       await cancel();
-      toast.success('Suscripción cancelada. Volvés al plan Free.');
+      toast.success(t('premium.cancelledToast'));
       setCancelOpen(false);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'No pudimos cancelar.');
+      toast.error(err instanceof ApiError ? err.message : t('premium.cancelError'));
     } finally {
       setSubmitting(false);
     }
@@ -96,11 +111,9 @@ export default function PremiumPage() {
           <Crown className="h-6 w-6" />
         </span>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Quetzalito Premium</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('premium.title')}</h1>
           <p className="text-muted">
-            {isPremium
-              ? 'Estás disfrutando todas las funciones avanzadas.'
-              : 'Llevá tu control financiero al siguiente nivel.'}
+            {isPremium ? t('premium.headerEnjoy') : t('premium.headerInvite')}
           </p>
         </div>
       </div>
@@ -113,15 +126,15 @@ export default function PremiumPage() {
               <Sparkles className="h-5 w-5 shrink-0 text-gold-600 mt-0.5" />
               <div className="flex-1">
                 <p className="font-semibold text-gold-700 dark:text-gold-400">
-                  Premium activo
+                  {t('premium.activeTitle')}
                 </p>
                 <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
                   <div className="flex items-center gap-2 text-muted">
                     <Calendar className="h-4 w-4" />
                     <span>
-                      Activo desde:{' '}
+                      {t('premium.activeSince')}{' '}
                       <strong className="text-ink-700 dark:text-ink-100">
-                        {new Date(status.activeSubscription.startsAt).toLocaleDateString('es-GT')}
+                        {new Date(status.activeSubscription.startsAt).toLocaleDateString(locale)}
                       </strong>
                     </span>
                   </div>
@@ -129,9 +142,9 @@ export default function PremiumPage() {
                     <div className="flex items-center gap-2 text-muted">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        Próxima renovación:{' '}
+                        {t('premium.nextRenewal')}{' '}
                         <strong className="text-ink-700 dark:text-ink-100">
-                          {new Date(status.activeSubscription.endsAt).toLocaleDateString('es-GT')}
+                          {new Date(status.activeSubscription.endsAt).toLocaleDateString(locale)}
                         </strong>
                       </span>
                     </div>
@@ -146,14 +159,14 @@ export default function PremiumPage() {
       {/* Features */}
       <Card>
         <CardContent>
-          <h3 className="mb-4 font-semibold">¿Qué incluye Premium?</h3>
+          <h3 className="mb-4 font-semibold">{t('premium.whatIncluded')}</h3>
           <ul className="space-y-3">
-            {PREMIUM_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-3 text-sm">
+            {PREMIUM_FEATURE_KEYS.map((key) => (
+              <li key={key} className="flex items-start gap-3 text-sm">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white">
                   <Check className="h-3 w-3" />
                 </span>
-                <span>{f}</span>
+                <span>{t(key)}</span>
               </li>
             ))}
           </ul>
@@ -163,16 +176,18 @@ export default function PremiumPage() {
       {/* Pricing + acción */}
       <Card className="overflow-hidden">
         <div className="bg-gradient-to-br from-gold-500 to-brand-500 p-6 text-white">
-          <p className="text-sm/6 opacity-80">{isPremium ? 'Tu plan actual' : 'Premium mensual'}</p>
+          <p className="text-sm/6 opacity-80">
+            {isPremium ? t('premium.yourCurrentPlan') : t('premium.monthlyPlan')}
+          </p>
           <div className="mt-1 flex items-baseline gap-1">
             <span className="text-5xl font-bold tracking-tight">
               {formatCurrency(status.pricing.amount, status.pricing.currency)}
             </span>
-            <span className="text-sm opacity-80">/ {status.pricing.intervalDays} días</span>
+            <span className="text-sm opacity-80">
+              {t('premium.perDays', { n: status.pricing.intervalDays })}
+            </span>
           </div>
-          <p className="mt-2 text-xs opacity-80">
-            Sin permanencia · Cancelá cuando quieras
-          </p>
+          <p className="mt-2 text-xs opacity-80">{t('premium.noCommitment')}</p>
         </div>
         <CardContent>
           {isPremium ? (
@@ -182,11 +197,9 @@ export default function PremiumPage() {
                 variant="ghost"
                 onClick={() => setCancelOpen(true)}
               >
-                Cancelar suscripción
+                {t('premium.cancel')}
               </Button>
-              <p className="text-center text-xs text-muted">
-                Si cancelás, tu plan se desactiva inmediatamente.
-              </p>
+              <p className="text-center text-xs text-muted">{t('premium.cancelHint')}</p>
             </div>
           ) : (
             <Button
@@ -195,7 +208,7 @@ export default function PremiumPage() {
               size="lg"
               onClick={() => setActivateOpen(true)}
             >
-              <CreditCard className="h-4 w-4" /> Activar Premium
+              <CreditCard className="h-4 w-4" /> {t('premium.activate')}
             </Button>
           )}
         </CardContent>
@@ -205,16 +218,18 @@ export default function PremiumPage() {
       <Modal
         open={activateOpen}
         onClose={() => !submitting && setActivateOpen(false)}
-        title="Activar Premium"
+        title={t('premium.activateModalTitle')}
         size="md"
       >
         <div className="space-y-4">
           <div className="rounded-xl bg-gold-500/10 p-4 text-sm">
             <p className="font-semibold text-gold-700 dark:text-gold-400">
-              Total a pagar: {formatCurrency(status.pricing.amount, status.pricing.currency)}
+              {t('premium.totalToPay', {
+                amount: formatCurrency(status.pricing.amount, status.pricing.currency),
+              })}
             </p>
             <p className="mt-1 text-xs text-muted">
-              Acceso por {status.pricing.intervalDays} días.
+              {t('premium.accessForN', { n: status.pricing.intervalDays })}
             </p>
           </div>
 
@@ -222,8 +237,7 @@ export default function PremiumPage() {
             <p className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>
-                <strong>Modo demo:</strong> esta es una simulación de pago. En producción
-                acá iría la pasarela real (Stripe, PayU, etc.). Sin cobro real.
+                <strong>{t('premium.demoMode')}</strong> {t('premium.demoModeDesc')}
               </span>
             </p>
           </div>
@@ -234,10 +248,10 @@ export default function PremiumPage() {
               onClick={() => setActivateOpen(false)}
               disabled={submitting}
             >
-              Cancelar
+              {t('premium.cancelBtn')}
             </Button>
             <Button variant="gold" onClick={handleActivate} loading={submitting}>
-              Confirmar y activar
+              {t('premium.confirmActivate')}
             </Button>
           </div>
         </div>
@@ -247,21 +261,19 @@ export default function PremiumPage() {
       <Modal
         open={cancelOpen}
         onClose={() => !submitting && setCancelOpen(false)}
-        title="Cancelar Premium"
+        title={t('premium.cancelModalTitle')}
         size="md"
       >
         <div className="space-y-4">
           <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm dark:border-red-700/50 dark:bg-red-900/20">
             <p className="flex items-start gap-2 text-red-800 dark:text-red-300">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>
-                Vas a perder acceso inmediatamente a:
-              </span>
+              <span>{t('premium.cancelWarning')}</span>
             </p>
             <ul className="mt-2 ml-6 list-disc space-y-1 text-xs text-red-700 dark:text-red-400">
-              <li>Sobres ilimitados (volvés al límite de 5)</li>
-              <li>Funciones premium</li>
-              <li>Sin anuncios (volverán a aparecer)</li>
+              {CANCEL_LOSES_KEYS.map((key) => (
+                <li key={key}>{t(key)}</li>
+              ))}
             </ul>
           </div>
 
@@ -272,7 +284,7 @@ export default function PremiumPage() {
               rel="noopener noreferrer"
               className="text-xs text-brand-600 hover:underline"
             >
-              Ver política de reembolso
+              {t('premium.refundLink')}
             </a>
             <div className="flex gap-2">
               <Button
@@ -280,10 +292,10 @@ export default function PremiumPage() {
                 onClick={() => setCancelOpen(false)}
                 disabled={submitting}
               >
-                Mantener Premium
+                {t('premium.cancelConfirm.keep')}
               </Button>
               <Button variant="danger" onClick={handleCancel} loading={submitting}>
-                Sí, cancelar
+                {t('premium.cancelConfirm.confirm')}
               </Button>
             </div>
           </div>

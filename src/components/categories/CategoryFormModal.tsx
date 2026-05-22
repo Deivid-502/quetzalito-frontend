@@ -9,6 +9,8 @@ import { ENVELOPE_COLORS } from '@/types/envelope';
 import { cn } from '@/lib/utils';
 import { ApiError, api } from '@/lib/api';
 import { toast } from '@/components/ui/Toaster';
+import { useT } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n';
 import type { Category } from '@/types/category';
 
 type Mode = 'create' | 'edit';
@@ -21,7 +23,20 @@ interface Props {
   onSaved: () => void;
 }
 
+const TYPE_LABEL_KEYS: Record<'expense' | 'income' | 'both', TranslationKey> = {
+  expense: 'categories.types.expense',
+  income: 'categories.types.income',
+  both: 'categories.types.both',
+};
+
+const TYPE_PREVIEW_KEYS: Record<'expense' | 'income' | 'both', TranslationKey> = {
+  expense: 'categories.previewExpense',
+  income: 'categories.previewIncome',
+  both: 'categories.previewBoth',
+};
+
 export function CategoryFormModal({ open, onClose, mode, category, onSaved }: Props) {
+  const t = useT();
   const [name, setName] = useState('');
   const [icon, setIcon] = useState<string>(CATEGORY_ICON_NAMES[0]);
   const [color, setColor] = useState<string>(ENVELOPE_COLORS[0]);
@@ -49,14 +64,14 @@ export function CategoryFormModal({ open, onClose, mode, category, onSaved }: Pr
     e.preventDefault();
     setError(null);
     if (!name.trim()) {
-      setError('El nombre es obligatorio.');
+      setError(t('categories.errorNameRequired'));
       return;
     }
     setSubmitting(true);
     try {
       if (mode === 'create') {
         await api.post('/categories', { name: name.trim(), icon, color, type });
-        toast.success('Categoría creada.');
+        toast.success(t('categories.created'));
       } else if (category) {
         await api.patch(`/categories/${category.id}`, {
           name: name.trim(),
@@ -64,12 +79,12 @@ export function CategoryFormModal({ open, onClose, mode, category, onSaved }: Pr
           color,
           type,
         });
-        toast.success('Categoría actualizada.');
+        toast.success(t('categories.updated'));
       }
       onSaved();
       onClose();
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'No pudimos guardar la categoría.';
+      const msg = err instanceof ApiError ? err.message : t('categories.errorSave');
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -80,16 +95,16 @@ export function CategoryFormModal({ open, onClose, mode, category, onSaved }: Pr
     <Modal
       open={open}
       onClose={onClose}
-      title={mode === 'create' ? 'Nueva categoría' : 'Editar categoría'}
-      description="Las categorías te ayudan a clasificar tus movimientos."
+      title={mode === 'create' ? t('categories.create') : t('categories.edit')}
+      description={t('categories.formDesc')}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
-          label="Nombre"
+          label={t('envelopes.nameLabel')}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Ej. Café, Suscripciones..."
+          placeholder={t('categories.namePlaceholder')}
           maxLength={50}
           required
         />
@@ -97,22 +112,22 @@ export function CategoryFormModal({ open, onClose, mode, category, onSaved }: Pr
         {/* Tipo */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-200">
-            Aplica a
+            {t('categories.appliesTo')}
           </label>
           <div className="grid grid-cols-3 gap-2 rounded-xl bg-ink-100 p-1 dark:bg-ink-800">
-            {(['expense', 'income', 'both'] as const).map((t) => (
+            {(['expense', 'income', 'both'] as const).map((typeOption) => (
               <button
-                key={t}
+                key={typeOption}
                 type="button"
-                onClick={() => setType(t)}
+                onClick={() => setType(typeOption)}
                 className={cn(
                   'rounded-lg py-2 text-sm font-semibold transition-all',
-                  type === t
+                  type === typeOption
                     ? 'bg-white shadow-soft dark:bg-ink-700'
                     : 'text-muted hover:text-ink-700 dark:hover:text-ink-200',
                 )}
               >
-                {t === 'expense' ? 'Gastos' : t === 'income' ? 'Ingresos' : 'Ambos'}
+                {t(TYPE_LABEL_KEYS[typeOption])}
               </button>
             ))}
           </div>
@@ -121,7 +136,7 @@ export function CategoryFormModal({ open, onClose, mode, category, onSaved }: Pr
         {/* Selector de ícono */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-200">
-            Ícono
+            {t('envelopes.iconLabel')}
           </label>
           <div className="grid grid-cols-8 gap-1.5 rounded-xl border border-ink-200 p-2 dark:border-ink-700 max-h-48 overflow-y-auto">
             {CATEGORY_ICON_NAMES.map((n) => (
@@ -146,7 +161,7 @@ export function CategoryFormModal({ open, onClose, mode, category, onSaved }: Pr
         {/* Color */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-200">
-            Color
+            {t('envelopes.color')}
           </label>
           <div className="flex flex-wrap gap-2">
             {ENVELOPE_COLORS.map((c) => (
@@ -159,6 +174,7 @@ export function CategoryFormModal({ open, onClose, mode, category, onSaved }: Pr
                   'h-8 w-8 rounded-full transition-all',
                   color === c ? 'ring-2 ring-offset-2 ring-ink-900 dark:ring-white scale-110' : 'opacity-80 hover:opacity-100',
                 )}
+                aria-label={t('envelopes.colorAria', { color: c })}
               />
             ))}
           </div>
@@ -167,7 +183,7 @@ export function CategoryFormModal({ open, onClose, mode, category, onSaved }: Pr
         {/* Vista previa */}
         <div className="rounded-xl border border-ink-200 p-4 dark:border-ink-700">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-            Vista previa
+            {t('envelopes.preview')}
           </p>
           <div className="flex items-center gap-3">
             <span
@@ -177,10 +193,8 @@ export function CategoryFormModal({ open, onClose, mode, category, onSaved }: Pr
               <CategoryIcon name={icon} className="h-5 w-5" />
             </span>
             <div>
-              <p className="font-semibold">{name || 'Nombre de la categoría'}</p>
-              <p className="text-xs text-muted">
-                {type === 'expense' ? 'Gastos' : type === 'income' ? 'Ingresos' : 'Ingresos y gastos'}
-              </p>
+              <p className="font-semibold">{name || t('categories.previewName')}</p>
+              <p className="text-xs text-muted">{t(TYPE_PREVIEW_KEYS[type])}</p>
             </div>
           </div>
         </div>
@@ -192,9 +206,9 @@ export function CategoryFormModal({ open, onClose, mode, category, onSaved }: Pr
         )}
 
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="button" variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
           <Button type="submit" loading={submitting}>
-            {mode === 'create' ? 'Crear' : 'Guardar cambios'}
+            {mode === 'create' ? t('categories.createBtn') : t('common.saveChanges')}
           </Button>
         </div>
       </form>

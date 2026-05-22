@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Calendar, ChevronDown, Filter, History, Loader2, TrendingDown, TrendingUp, X } from 'lucide-react';
+import { Calendar, Filter, History, Loader2, TrendingDown, TrendingUp, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Select, type SelectOption } from '@/components/ui/Select';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { AdSlot } from '@/components/common/AdSlot';
@@ -14,29 +15,22 @@ import { useCategories } from '@/hooks/useCategories';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn, formatCurrency } from '@/lib/utils';
 import { toast } from '@/components/ui/Toaster';
-import { resolveIcon } from '@/lib/icons';
+import { useT, useLanguage } from '@/lib/i18n';
 import type { Transaction, TransactionType } from '@/types/transaction';
 
-/** Para usar dentro de <option>: muestra emoji o cadena vacía si es nombre Lucide */
-function emojiOrEmpty(icon: string): string {
-  const r = resolveIcon(icon);
-  return typeof r === 'string' ? r : '';
-}
-
-function startOfMonth(d = new Date()) {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-function endOfMonth(d = new Date()) {
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-}
 function ymd(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 export default function HistorialPage() {
+  const t = useT();
+  const { language } = useLanguage();
   const user = useAuthStore((s) => s.user);
   const currency = user?.currencyCode ?? 'GTQ';
+
+  // Locale BCP-47 derivado del idioma activo (afecta formato de meses, días, etc).
+  const locale = language === 'en' ? 'en-US' : 'es-GT';
 
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -80,10 +74,35 @@ export default function HistorialPage() {
       .map(([day, items]) => ({ day, items }));
   }, [data]);
 
-  const monthLabel = new Date(year, month).toLocaleDateString('es-GT', {
+  const monthLabel = new Date(year, month).toLocaleDateString(locale, {
     month: 'long',
     year: 'numeric',
   });
+
+  // Opciones de Listbox
+  const monthOptions: SelectOption<number>[] = Array.from({ length: 12 }).map((_, i) => ({
+    value: i,
+    label: capitalize(new Date(2024, i).toLocaleDateString(locale, { month: 'long' })),
+  }));
+  const yearOptions: SelectOption<number>[] = [today.getFullYear() - 1, today.getFullYear(), today.getFullYear() + 1].map((y) => ({
+    value: y,
+    label: String(y),
+  }));
+  const typeOptions: SelectOption<TransactionType | ''>[] = [
+    { value: '', label: t('common.all') },
+    { value: 'income', label: t('transactions.income') },
+    { value: 'expense', label: t('transactions.expense') },
+    { value: 'transfer_in', label: t('transactions.transferIn') },
+    { value: 'transfer_out', label: t('transactions.transferOut') },
+  ];
+  const envelopeOptions: SelectOption<string>[] = [
+    { value: '', label: t('common.all') },
+    ...envelopes.map((e) => ({ value: e.id, label: e.name })),
+  ];
+  const categoryOptions: SelectOption<string>[] = [
+    { value: '', label: t('common.all') },
+    ...categories.map((c) => ({ value: c.id, label: c.name })),
+  ];
 
   const hasFilters = !!type || !!envelopeId || !!categoryId;
 
@@ -97,8 +116,8 @@ export default function HistorialPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Historial</h1>
-          <p className="text-muted">Todos tus movimientos en un solo lugar.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('history.title')}</h1>
+          <p className="text-muted">{t('history.subtitle')}</p>
         </div>
       </div>
 
@@ -108,33 +127,23 @@ export default function HistorialPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted" />
-              <div className="relative inline-flex items-center">
-                <select
+              <div className="w-40">
+                <Select
+                  options={monthOptions}
                   value={month}
-                  onChange={(e) => setMonth(parseInt(e.target.value, 10))}
-                  className="appearance-none rounded-lg border border-ink-200 bg-transparent px-2 py-1.5 pr-7 text-sm font-medium dark:border-ink-700 [&>option]:bg-white [&>option]:text-ink-700 dark:[&>option]:bg-ink-800 dark:[&>option]:text-ink-100"
-                >
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <option key={i} value={i}>
-                      {new Date(2024, i).toLocaleDateString('es-GT', { month: 'long' })}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-ink-400" />
+                  onChange={setMonth}
+                  uiSize="sm"
+                  ariaLabel={t('history.month')}
+                />
               </div>
-              <div className="relative inline-flex items-center">
-                <select
+              <div className="w-24">
+                <Select
+                  options={yearOptions}
                   value={year}
-                  onChange={(e) => setYear(parseInt(e.target.value, 10))}
-                  className="appearance-none rounded-lg border border-ink-200 bg-transparent px-2 py-1.5 pr-7 text-sm font-medium dark:border-ink-700 [&>option]:bg-white [&>option]:text-ink-700 dark:[&>option]:bg-ink-800 dark:[&>option]:text-ink-100"
-                >
-                  {[today.getFullYear() - 1, today.getFullYear(), today.getFullYear() + 1].map(
-                    (y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ),
-                  )}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-ink-400" />
+                  onChange={setYear}
+                  uiSize="sm"
+                  ariaLabel={t('history.year')}
+                />
               </div>
             </div>
             <Button
@@ -142,7 +151,7 @@ export default function HistorialPage() {
               size="sm"
               onClick={() => setShowFilters((v) => !v)}
             >
-              <Filter className="h-4 w-4" /> Filtros
+              <Filter className="h-4 w-4" /> {t('history.filters')}
               {hasFilters && (
                 <span className="rounded-full bg-white/20 px-1.5 text-[10px]">●</span>
               )}
@@ -152,62 +161,41 @@ export default function HistorialPage() {
           {showFilters && (
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted">Tipo</label>
-                <div className="relative flex items-center">
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value as TransactionType | '')}
-                    className="w-full appearance-none rounded-lg border border-ink-200 bg-transparent px-2 py-2 pr-8 text-sm dark:border-ink-700 [&>option]:bg-white [&>option]:text-ink-700 dark:[&>option]:bg-ink-800 dark:[&>option]:text-ink-100"
-                  >
-                    <option value="">Todos</option>
-                    <option value="income">Ingresos</option>
-                    <option value="expense">Gastos</option>
-                    <option value="transfer_in">Transferencias recibidas</option>
-                    <option value="transfer_out">Transferencias enviadas</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-ink-400" />
-                </div>
+                <label className="mb-1 block text-xs font-medium text-muted">{t('common.type')}</label>
+                <Select
+                  options={typeOptions}
+                  value={type}
+                  onChange={(v) => setType(v as TransactionType | '')}
+                  uiSize="sm"
+                  ariaLabel={t('common.type')}
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted">Sobre</label>
-                <div className="relative flex items-center">
-                  <select
-                    value={envelopeId}
-                    onChange={(e) => setEnvelopeId(e.target.value)}
-                    className="w-full appearance-none rounded-lg border border-ink-200 bg-transparent px-2 py-2 pr-8 text-sm dark:border-ink-700 [&>option]:bg-white [&>option]:text-ink-700 dark:[&>option]:bg-ink-800 dark:[&>option]:text-ink-100"
-                  >
-                    <option value="">Todos</option>
-                    {envelopes.map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {emojiOrEmpty(e.icon)} {e.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-ink-400" />
-                </div>
+                <label className="mb-1 block text-xs font-medium text-muted">{t('common.envelope')}</label>
+                <Select
+                  options={envelopeOptions}
+                  value={envelopeId}
+                  onChange={setEnvelopeId}
+                  uiSize="sm"
+                  ariaLabel={t('common.envelope')}
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted">Categoría</label>
-                <div className="relative flex items-center">
-                  <select
-                    value={categoryId}
-                    onChange={(e) => setCategoryId(e.target.value)}
-                    className="w-full appearance-none rounded-lg border border-ink-200 bg-transparent px-2 py-2 pr-8 text-sm dark:border-ink-700 [&>option]:bg-white [&>option]:text-ink-700 dark:[&>option]:bg-ink-800 dark:[&>option]:text-ink-100"
-                  >
-                    <option value="">Todas</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-ink-400" />
-                </div>
+                <label className="mb-1 block text-xs font-medium text-muted">{t('common.category')}</label>
+                <Select
+                  options={categoryOptions}
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  uiSize="sm"
+                  ariaLabel={t('common.category')}
+                />
               </div>
               {hasFilters && (
                 <button
                   onClick={clearFilters}
                   className="sm:col-span-3 inline-flex items-center justify-center gap-1 text-xs text-muted hover:text-ink-700"
                 >
-                  <X className="h-3 w-3" /> Limpiar filtros
+                  <X className="h-3 w-3" /> {t('history.clearFilters')}
                 </button>
               )}
             </div>
@@ -219,21 +207,21 @@ export default function HistorialPage() {
       {data && (
         <div className="grid gap-3 sm:grid-cols-3">
           <TotalCard
-            label="Ingresos"
+            label={t('dashboard.monthIncome')}
             value={data.totals.income}
             currency={currency}
             icon={<TrendingUp className="h-4 w-4" />}
             color="brand"
           />
           <TotalCard
-            label="Gastos"
+            label={t('dashboard.monthExpense')}
             value={data.totals.expense}
             currency={currency}
             icon={<TrendingDown className="h-4 w-4" />}
             color="danger"
           />
           <TotalCard
-            label="Balance del mes"
+            label={t('common.balance')}
             value={data.totals.net}
             currency={currency}
             icon={data.totals.net >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
@@ -254,21 +242,21 @@ export default function HistorialPage() {
           ) : grouped.length === 0 ? (
             <EmptyState
               icon={<History className="h-7 w-7" />}
-              title="Sin movimientos en este periodo"
-              description={`No encontramos movimientos para ${monthLabel}. Probá cambiar de mes o ajustar los filtros.`}
+              title={t('transactions.noResults')}
+              description={`${monthLabel}`}
             />
           ) : (
             <div className="divide-y divide-ink-200 dark:divide-ink-700">
               {grouped.map(({ day, items }) => {
-                const dayTotal = items.reduce((sum, t) => {
-                  const sign = t.type === 'income' || t.type === 'transfer_in' ? 1 : -1;
-                  return sum + sign * t.amount;
+                const dayTotal = items.reduce((sum, tx) => {
+                  const sign = tx.type === 'income' || tx.type === 'transfer_in' ? 1 : -1;
+                  return sum + sign * tx.amount;
                 }, 0);
                 return (
                   <div key={day} className="py-3 first:pt-0 last:pb-0">
                     <div className="mb-1 flex items-center justify-between">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                        {formatDayLabel(day)}
+                        {formatDayLabel(day, locale, t)}
                       </p>
                       <p
                         className={cn(
@@ -301,18 +289,14 @@ export default function HistorialPage() {
       <ConfirmDialog
         open={!!confirmDelete}
         onClose={() => setConfirmDelete(null)}
-        title="¿Eliminar este movimiento?"
-        description={
-          confirmDelete?.type === 'transfer_in' || confirmDelete?.type === 'transfer_out'
-            ? 'Al eliminar una transferencia se borran ambos lados y se revierten los saldos.'
-            : 'Se restaurará el saldo del sobre afectado.'
-        }
-        confirmLabel="Eliminar"
+        title={t('transactions.deleteConfirm')}
+        description={t('transactions.deleteWarning')}
+        confirmLabel={t('common.delete')}
         destructive
         onConfirm={async () => {
           if (!confirmDelete) return;
           await remove(confirmDelete.id);
-          toast.success('Movimiento eliminado.');
+          toast.success(t('transactions.deleted'));
         }}
       />
 
@@ -365,14 +349,18 @@ function TotalCard({
   );
 }
 
-function formatDayLabel(ymdStr: string): string {
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function formatDayLabel(ymdStr: string, locale: string, t: ReturnType<typeof useT>): string {
   const [y, m, d] = ymdStr.split('-').map(Number);
   const date = new Date(y, m - 1, d);
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
 
-  if (ymd(date) === ymd(today)) return 'Hoy';
-  if (ymd(date) === ymd(yesterday)) return 'Ayer';
-  return date.toLocaleDateString('es-GT', { weekday: 'long', day: 'numeric', month: 'long' });
+  if (ymd(date) === ymd(today)) return locale.startsWith('en') ? 'Today' : 'Hoy';
+  if (ymd(date) === ymd(yesterday)) return locale.startsWith('en') ? 'Yesterday' : 'Ayer';
+  return capitalize(date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' }));
 }

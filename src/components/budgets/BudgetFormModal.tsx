@@ -8,6 +8,7 @@ import { CategoryIcon } from '@/lib/icons';
 import { ApiError } from '@/lib/api';
 import { toast } from '@/components/ui/Toaster';
 import { formatCurrency } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 import type { BudgetItem, UpsertBudgetPayload } from '@/types/budget';
 
 interface Props {
@@ -31,6 +32,7 @@ export function BudgetFormModal({
   onSubmit,
   onRemove,
 }: Props) {
+  const t = useT();
   const [amount, setAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -47,7 +49,7 @@ export function BudgetFormModal({
     if (!item) return;
     const value = parseFloat(amount);
     if (Number.isNaN(value) || value <= 0) {
-      setError('Ingresá un monto válido.');
+      setError(t('budgets.errorAmountInvalid'));
       return;
     }
     setSubmitting(true);
@@ -59,10 +61,10 @@ export function BudgetFormModal({
         periodYear: year,
         periodMonth: month,
       });
-      toast.success(item.budgetId ? 'Presupuesto actualizado.' : 'Presupuesto creado.');
+      toast.success(item.budgetId ? t('budgets.updated') : t('budgets.created'));
       onClose();
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'No pudimos guardar el presupuesto.';
+      const msg = err instanceof ApiError ? err.message : t('budgets.errorSave');
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -74,10 +76,10 @@ export function BudgetFormModal({
     setRemoving(true);
     try {
       await onRemove(item.budgetId);
-      toast.success('Presupuesto eliminado.');
+      toast.success(t('budgets.deleted'));
       onClose();
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'No pudimos eliminar el presupuesto.';
+      const msg = err instanceof ApiError ? err.message : t('budgets.errorRemove');
       setError(msg);
     } finally {
       setRemoving(false);
@@ -90,8 +92,8 @@ export function BudgetFormModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={item.budgetId ? 'Editar presupuesto' : 'Nuevo presupuesto'}
-      description="Definí cuánto querés gastar este mes en esta categoría."
+      title={item.budgetId ? t('budgets.edit') : t('budgets.create')}
+      description={t('budgets.formDesc')}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Cabecera con la categoría */}
@@ -105,13 +107,13 @@ export function BudgetFormModal({
           <div className="flex-1">
             <p className="font-semibold">{item.category.name}</p>
             <p className="text-xs text-muted">
-              Ya gastaste {formatCurrency(item.spent, currency)} este mes
+              {t('budgets.alreadySpent', { amount: formatCurrency(item.spent, currency) })}
             </p>
           </div>
         </div>
 
         <Input
-          label="Monto del presupuesto"
+          label={t('budgets.amountLabel')}
           type="number"
           step="0.01"
           min="0.01"
@@ -120,7 +122,7 @@ export function BudgetFormModal({
           placeholder="0.00"
           autoFocus
           required
-          hint={`En ${currency}.`}
+          hint={t('budgets.amountHint', { currency })}
         />
 
         {error && (
@@ -132,13 +134,13 @@ export function BudgetFormModal({
         <div className="flex justify-between gap-2">
           {item.budgetId && onRemove ? (
             <Button type="button" variant="ghost" onClick={handleRemove} loading={removing} className="!text-danger">
-              Eliminar
+              {t('common.delete')}
             </Button>
           ) : <span />}
           <div className="flex gap-2">
-            <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+            <Button type="button" variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
             <Button type="submit" loading={submitting}>
-              {item.budgetId ? 'Guardar' : 'Definir'}
+              {item.budgetId ? t('common.save') : t('budgets.define')}
             </Button>
           </div>
         </div>

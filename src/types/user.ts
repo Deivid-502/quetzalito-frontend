@@ -10,6 +10,8 @@ export interface User {
   currencyCode: string;
   language: string;
   theme: 'light' | 'dark' | 'system';
+  /** ISO string o null si el email no fue verificado aún */
+  emailVerifiedAt?: string | null;
 }
 
 export interface AuthResponse {

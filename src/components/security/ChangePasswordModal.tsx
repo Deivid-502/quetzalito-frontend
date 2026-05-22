@@ -63,7 +63,7 @@ export function ChangePasswordModal({ open, onClose }: Props) {
       onClose();
       router.replace('/login');
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'No pudimos cambiar la contraseña.';
+      const msg = err instanceof ApiError ? err.message : t('security.errorChangePassword');
       setError(msg);
     } finally {
       setSubmitting(false);

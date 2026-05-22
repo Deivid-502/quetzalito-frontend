@@ -10,9 +10,12 @@ import { DeleteCategoryModal } from '@/components/categories/DeleteCategoryModal
 import { CategoryIcon } from '@/lib/icons';
 import { useCategories } from '@/hooks/useCategories';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n';
 import type { Category } from '@/types/category';
 
 export default function CategoriesPage() {
+  const t = useT();
   const { categories, loading, refresh } = useCategories();
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
@@ -37,16 +40,16 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-6">
       <Link href="/ajustes" className="inline-flex items-center gap-1 text-sm text-muted hover:underline">
-        <ArrowLeft className="h-4 w-4" /> Volver a ajustes
+        <ArrowLeft className="h-4 w-4" /> {t('categories.backToSettings')}
       </Link>
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Categorías</h1>
-          <p className="text-muted">Personalizá cómo clasificás tus movimientos.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('categories.title')}</h1>
+          <p className="text-muted">{t('categories.customizeSubtitle')}</p>
         </div>
         <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" /> Nueva categoría
+          <Plus className="h-4 w-4" /> {t('categories.create')}
         </Button>
       </div>
 
@@ -62,13 +65,13 @@ export default function CategoriesPage() {
           <CardContent>
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-semibold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-brand-500" /> Mis categorías
+                <Sparkles className="h-4 w-4 text-brand-500" /> {t('categories.mine')}
               </h3>
               <span className="text-xs text-muted">{own.length}</span>
             </div>
             {own.length === 0 ? (
               <p className="rounded-xl border-2 border-dashed border-ink-200 py-8 text-center text-sm text-muted dark:border-ink-700">
-                Aún no creaste categorías propias. Las que creés aparecerán acá.
+                {t('categories.noneYet')}
               </p>
             ) : (
               <div className="grid gap-2 sm:grid-cols-2">
@@ -92,13 +95,11 @@ export default function CategoriesPage() {
           <CardContent>
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-semibold flex items-center gap-2">
-                <Tag className="h-4 w-4 text-muted" /> Categorías del sistema
+                <Tag className="h-4 w-4 text-muted" /> {t('categories.systemTitle')}
               </h3>
               <span className="text-xs text-muted">{system.length}</span>
             </div>
-            <p className="mb-3 text-xs text-muted">
-              Estas categorías están disponibles para todos los usuarios y no se pueden modificar.
-            </p>
+            <p className="mb-3 text-xs text-muted">{t('categories.systemDesc')}</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {system.map((c) => (
                 <CategoryRow key={c.id} category={c} readOnly />
@@ -127,6 +128,12 @@ export default function CategoriesPage() {
   );
 }
 
+const TYPE_PREVIEW_KEYS: Record<'expense' | 'income' | 'both', TranslationKey> = {
+  expense: 'categories.previewExpense',
+  income: 'categories.previewIncome',
+  both: 'categories.types.both',
+};
+
 function CategoryRow({
   category,
   onEdit,
@@ -138,11 +145,8 @@ function CategoryRow({
   onDelete?: () => void;
   readOnly?: boolean;
 }) {
-  const typeLabel = {
-    expense: 'Gastos',
-    income: 'Ingresos',
-    both: 'Ambos',
-  }[category.type];
+  const t = useT();
+  const typeLabel = t(TYPE_PREVIEW_KEYS[category.type]);
 
   return (
     <div
@@ -166,14 +170,14 @@ function CategoryRow({
           <button
             onClick={onEdit}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-ink-100 dark:hover:bg-ink-700/40"
-            aria-label="Editar"
+            aria-label={t('common.edit')}
           >
             <Pencil className="h-4 w-4" />
           </button>
           <button
             onClick={onDelete}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-danger hover:bg-red-50 dark:hover:bg-red-900/20"
-            aria-label="Eliminar"
+            aria-label={t('common.delete')}
           >
             <Trash2 className="h-4 w-4" />
           </button>

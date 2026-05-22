@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { onChange, QZ_EVENTS } from '@/lib/events';
+import { useLanguage } from '@/lib/i18n';
 import type { DashboardResponse } from '@/types/dashboard';
 
 export function useDashboard(year?: number, month?: number) {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguage();
 
   const fetch = useCallback(async () => {
     setLoading(true);
@@ -17,15 +19,16 @@ export function useDashboard(year?: number, month?: number) {
       const params = new URLSearchParams();
       if (year !== undefined) params.set('year', String(year));
       if (month !== undefined) params.set('month', String(month));
+      params.set('lang', language);
       const q = params.toString();
       const res = await api.get<DashboardResponse>(`/dashboard${q ? '?' + q : ''}`);
       setData(res);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No pudimos cargar tu dashboard.');
+      setError(err instanceof ApiError ? err.message : language === 'es' ? 'No pudimos cargar tu dashboard.' : 'Could not load your dashboard.');
     } finally {
       setLoading(false);
     }
-  }, [year, month]);
+  }, [year, month, language]);
 
   useEffect(() => {
     void fetch();

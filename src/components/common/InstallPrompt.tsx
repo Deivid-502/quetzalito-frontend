@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/lib/i18n';
 
 /**
  * Tipo del evento beforeinstallprompt (no estandarizado en TS Lib).
@@ -19,6 +20,7 @@ interface BeforeInstallPromptEvent extends Event {
  * En Safari/iOS la instalación es manual desde "Compartir → Añadir a pantalla".
  */
 export function InstallPrompt() {
+  const t = useT();
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
 
@@ -52,8 +54,8 @@ export function InstallPrompt() {
   }
 
   return (
-    <Button variant="ghost" size="sm" onClick={handleInstall} title="Instalar como app">
-      <Download className="h-4 w-4" /> Instalar
+    <Button variant="ghost" size="sm" onClick={handleInstall} title={t('offline.installApp')}>
+      <Download className="h-4 w-4" /> {t('offline.install')}
     </Button>
   );
 }

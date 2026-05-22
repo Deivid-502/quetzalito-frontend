@@ -2,6 +2,8 @@
 
 import { CategoryIcon } from '@/lib/icons';
 import { cn, formatCurrency } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n';
 import type { BudgetItem } from '@/types/budget';
 
 interface Props {
@@ -18,15 +20,16 @@ const STATUS_STYLES: Record<BudgetItem['status'], { bar: string; text: string; t
   exceeded: { bar: 'bg-danger',       text: 'text-danger',       tone: 'border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700' },
 };
 
-const STATUS_LABEL: Record<BudgetItem['status'], string> = {
-  unset:    'Sin presupuesto',
-  ok:       'Vas bien',
-  warning:  'Atento',
-  alert:    'Cerca del límite',
-  exceeded: 'Excedido',
+const STATUS_KEYS: Record<BudgetItem['status'], TranslationKey> = {
+  unset:    'budgets.status.unset',
+  ok:       'budgets.status.ok',
+  warning:  'budgets.status.warning',
+  alert:    'budgets.status.alert',
+  exceeded: 'budgets.status.exceeded',
 };
 
 export function BudgetCard({ item, currency, onClick }: Props) {
+  const t = useT();
   const styles = STATUS_STYLES[item.status];
   const widthPercent = Math.min(100, item.percent);
 
@@ -49,7 +52,7 @@ export function BudgetCard({ item, currency, onClick }: Props) {
         <div className="min-w-0 flex-1">
           <p className="font-semibold truncate">{item.category.name}</p>
           <p className={cn('text-[11px] font-semibold', styles.text)}>
-            {STATUS_LABEL[item.status]}
+            {t(STATUS_KEYS[item.status])}
           </p>
         </div>
         <p className="text-right text-sm font-semibold">
@@ -59,7 +62,7 @@ export function BudgetCard({ item, currency, onClick }: Props) {
               <span className="text-muted"> / {formatCurrency(item.limit, currency)}</span>
             </>
           ) : (
-            <span className="text-muted text-xs font-medium">Sin definir</span>
+            <span className="text-muted text-xs font-medium">{t('budgets.undefined')}</span>
           )}
         </p>
       </div>
@@ -74,19 +77,21 @@ export function BudgetCard({ item, currency, onClick }: Props) {
           </div>
           <div className="mt-1.5 flex items-center justify-between text-[11px]">
             <span className={cn('font-semibold', styles.text)}>
-              {Math.round(item.percent)}% usado
+              {t('budgets.percentUsed', { n: Math.round(item.percent) })}
             </span>
             <span className="text-muted">
               {item.remaining > 0
-                ? `Te quedan ${formatCurrency(item.remaining, currency)}`
-                : `Excediste por ${formatCurrency(item.spent - item.limit, currency)}`}
+                ? t('budgets.remainingAmount', {
+                    amount: formatCurrency(item.remaining, currency),
+                  })
+                : t('budgets.exceededAmount', {
+                    amount: formatCurrency(item.spent - item.limit, currency),
+                  })}
             </span>
           </div>
         </>
       ) : (
-        <p className="mt-3 text-xs text-muted">
-          Tocá para definir un presupuesto mensual para esta categoría.
-        </p>
+        <p className="mt-3 text-xs text-muted">{t('budgets.tapToDefine')}</p>
       )}
     </button>
   );

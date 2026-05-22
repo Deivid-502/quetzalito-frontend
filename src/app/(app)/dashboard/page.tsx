@@ -6,7 +6,6 @@ import {
   TrendingUp,
   TrendingDown,
   AlertTriangle,
-  Wallet,
   Lightbulb,
   ArrowUpRight,
   ArrowDownRight,
@@ -24,15 +23,43 @@ import { useDashboard } from '@/hooks/useDashboard';
 import { useTransactionModal } from '@/components/transactions/TransactionModalProvider';
 import { CategoryIcon, InlineIcon } from '@/lib/icons';
 import { cn, formatCurrency } from '@/lib/utils';
+import { useT, useLanguage } from '@/lib/i18n';
 import type {
-  DashboardResponse,
   DashboardAlert,
   DashboardCategoryBreakdown,
   DashboardEnvelope,
   DashboardTransaction,
 } from '@/types/dashboard';
 
+/**
+ * Mapea nuestro código de idioma 'es'/'en' al BCP-47 que usa
+ * `Intl` y `toLocaleDateString`.
+ *  · 'es' → 'es-GT' (formato guatemalteco)
+ *  · 'en' → 'en-US'
+ */
+function bcp47(lang: 'es' | 'en'): string {
+  return lang === 'es' ? 'es-GT' : 'en-US';
+}
+
+/**
+ * Renderiza el saludo "Hola, {nickname}" con el nickname en color brand,
+ * funcionando para cualquier idioma (la coma o el orden cambia, así que
+ * splitteamos por un placeholder único).
+ */
+function renderGreeting(template: string, nickname: string) {
+  const parts = template.split('__NICK__');
+  return (
+    <>
+      {parts[0]}
+      <span className="text-brand-500">{nickname}</span>
+      {parts[1] ?? ''} 👋
+    </>
+  );
+}
+
 export default function DashboardPage() {
+  const t = useT();
+  const { language } = useLanguage();
   const user = useAuthStore((s) => s.user);
   const { data, loading, error } = useDashboard();
   const { open: openTxModal } = useTransactionModal();
@@ -49,18 +76,24 @@ export default function DashboardPage() {
     return (
       <Card>
         <CardContent>
-          <p className="text-sm text-danger">{error ?? 'No pudimos cargar tu dashboard.'}</p>
+          <p className="text-sm text-danger">{error ?? t('dashboard.loadError')}</p>
         </CardContent>
       </Card>
     );
   }
 
   const currency = data.user.currencyCode || user?.currencyCode || 'GTQ';
-  const todayLabel = new Date().toLocaleDateString('es-GT', {
+  const locale = bcp47(language);
+  const todayLabel = new Date().toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   });
+  const daysLeft = data.dailyLimit.daysLeft;
+  const daysLeftStr =
+    daysLeft === 1
+      ? t('dashboard.daysLeft', { n: daysLeft })
+      : t('dashboard.daysLeftPlural', { n: daysLeft });
 
   return (
     <div className="space-y-6">
@@ -68,12 +101,15 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Hola, <span className="text-brand-500">{data.user.nickname}</span> 👋
+            {renderGreeting(
+              t('dashboard.greeting', { name: '__NICK__' }),
+              data.user.nickname,
+            )}
           </h1>
-          <p className="text-muted">Esto es lo que pasa con tu dinero hoy, {todayLabel}.</p>
+          <p className="text-muted">{t('dashboard.todayHint', { date: todayLabel })}</p>
         </div>
         <Button size="lg" variant="primary" onClick={() => openTxModal()}>
-          <Plus className="h-5 w-5" /> Agregar gasto
+          <Plus className="h-5 w-5" /> {t('dashboard.addExpense')}
         </Button>
       </div>
 
@@ -82,7 +118,7 @@ export default function DashboardPage() {
         {/* Tarjeta de saldo grande */}
         <Card className="lg:col-span-2 overflow-hidden">
           <div className="bg-gradient-to-br from-brand-500 to-brand-700 p-6 text-white">
-            <p className="text-sm/6 opacity-80">Saldo total disponible</p>
+            <p className="text-sm/6 opacity-80">{t('dashboard.totalBalance')}</p>
             <p className="mt-1 text-4xl font-bold tracking-tight sm:text-5xl">
               {formatCurrency(data.balance.total, currency)}
             </p>
@@ -92,7 +128,7 @@ export default function DashboardPage() {
                   <ArrowDownRight className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="opacity-80">Ingresos del mes</p>
+                  <p className="opacity-80">{t('dashboard.monthIncome')}</p>
                   <p className="font-semibold">{formatCurrency(data.balance.monthIncome, currency)}</p>
                 </div>
               </div>
@@ -101,7 +137,7 @@ export default function DashboardPage() {
                   <ArrowUpRight className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="opacity-80">Gastos del mes</p>
+                  <p className="opacity-80">{t('dashboard.monthExpense')}</p>
                   <p className="font-semibold">{formatCurrency(data.balance.monthExpense, currency)}</p>
                 </div>
               </div>
@@ -113,18 +149,15 @@ export default function DashboardPage() {
         <Card>
           <CardContent>
             <div className="flex items-center gap-2 text-sm text-muted">
-              <Target className="h-4 w-4" /> Podés gastar hoy
+              <Target className="h-4 w-4" /> {t('dashboard.dailyLimit')}
             </div>
             <p className="mt-2 text-3xl font-bold text-brand-500">
               {formatCurrency(data.dailyLimit.value, currency)}
             </p>
             <p className="mt-1 text-xs text-muted">
-              {data.dailyLimit.isCurrentMonth ? (
-                <>Para llegar al fin de mes con tu saldo actual ({data.dailyLimit.daysLeft}{' '}
-                  {data.dailyLimit.daysLeft === 1 ? 'día' : 'días'} restantes).</>
-              ) : (
-                <>Promedio diario para el mes seleccionado.</>
-              )}
+              {data.dailyLimit.isCurrentMonth
+                ? t('dashboard.toEndOfMonth', { left: daysLeftStr })
+                : t('dashboard.avgDaily')}
             </p>
             <div className="mt-4 h-2 w-full rounded-full bg-ink-100 dark:bg-ink-700">
               <div
@@ -140,7 +173,7 @@ export default function DashboardPage() {
               />
             </div>
             <p className="mt-1.5 text-[11px] text-muted">
-              {Math.round(data.dailyLimit.percentSpent)}% de tus ingresos gastados
+              {t('dashboard.percentSpent', { n: Math.round(data.dailyLimit.percentSpent) })}
             </p>
           </CardContent>
         </Card>
@@ -160,9 +193,9 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardContent>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold">Gastos por categoría</h3>
+              <h3 className="font-semibold">{t('dashboard.expensesByCategory')}</h3>
               <span className="text-xs text-muted capitalize">
-                {new Date(data.period.year, data.period.month - 1).toLocaleDateString('es-GT', {
+                {new Date(data.period.year, data.period.month - 1).toLocaleDateString(locale, {
                   month: 'long',
                   year: 'numeric',
                 })}
@@ -171,14 +204,15 @@ export default function DashboardPage() {
             {data.categoryBreakdown.length === 0 ? (
               <EmptyState
                 icon={<TrendingDown className="h-7 w-7" />}
-                title="Sin gastos este mes"
-                description="Cuando registres gastos, vas a ver acá la distribución por categoría."
+                title={t('dashboard.noExpensesThisMonth')}
+                description={t('dashboard.noExpensesDesc')}
               />
             ) : (
               <CategoryBreakdownView
                 items={data.categoryBreakdown}
                 total={data.categoryBreakdownTotal}
                 currency={currency}
+                totalLabel={t('dashboard.total')}
               />
             )}
           </CardContent>
@@ -188,7 +222,9 @@ export default function DashboardPage() {
           <CardContent>
             <div className="flex items-center gap-2 text-gold-600">
               <Lightbulb className="h-5 w-5" />
-              <span className="text-xs font-semibold uppercase tracking-wide">Tip</span>
+              <span className="text-xs font-semibold uppercase tracking-wide">
+                {t('dashboard.tip')}
+              </span>
             </div>
             <h3 className="mt-2 font-semibold">{data.tip.title}</h3>
             <p className="mt-1.5 text-sm text-muted">{data.tip.text}</p>
@@ -202,20 +238,25 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardContent>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold">Tus sobres</h3>
+              <h3 className="font-semibold">{t('dashboard.yourEnvelopes')}</h3>
               <Link href="/sobres" className="text-xs font-semibold text-brand-600 hover:underline">
-                Ver todos
+                {t('dashboard.viewAll')}
               </Link>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
               {data.topEnvelopes.map((e) => (
-                <EnvelopeTile key={e.id} envelope={e} currency={currency} />
+                <EnvelopeTile
+                  key={e.id}
+                  envelope={e}
+                  currency={currency}
+                  goalLabel={t('dashboard.goal')}
+                />
               ))}
               <Link
                 href="/sobres"
                 className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ink-200 p-4 text-sm font-medium text-muted transition-colors hover:border-brand-400 hover:text-brand-600 dark:border-ink-700"
               >
-                <Plus className="h-4 w-4" /> Nuevo sobre
+                <Plus className="h-4 w-4" /> {t('dashboard.newEnvelope')}
               </Link>
             </div>
           </CardContent>
@@ -225,19 +266,25 @@ export default function DashboardPage() {
         <Card>
           <CardContent>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold">Actividad reciente</h3>
+              <h3 className="font-semibold">{t('dashboard.recentActivity')}</h3>
               <Link href="/historial" className="text-xs font-semibold text-brand-600 hover:underline">
-                Ver historial
+                {t('dashboard.viewHistory')}
               </Link>
             </div>
             {data.recentTransactions.length === 0 ? (
               <p className="rounded-xl border-2 border-dashed border-ink-200 py-6 text-center text-xs text-muted dark:border-ink-700">
-                Aún no hay movimientos este mes.
+                {t('dashboard.empty.transactions')}
               </p>
             ) : (
               <ul className="divide-y divide-ink-200 dark:divide-ink-700">
                 {data.recentTransactions.map((tx) => (
-                  <RecentTxRow key={tx.id} tx={tx} currency={currency} />
+                  <RecentTxRow
+                    key={tx.id}
+                    tx={tx}
+                    currency={currency}
+                    incomeLabel={t('dashboard.income')}
+                    expenseLabel={t('dashboard.expense')}
+                  />
                 ))}
               </ul>
             )}
@@ -250,9 +297,9 @@ export default function DashboardPage() {
         <Card>
           <CardContent>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold">Presupuestos en alerta</h3>
+              <h3 className="font-semibold">{t('dashboard.budgetAlerts')}</h3>
               <Link href="/presupuestos" className="text-xs font-semibold text-brand-600 hover:underline">
-                Ver todos
+                {t('dashboard.viewAll')}
               </Link>
             </div>
             <div className="space-y-3">
@@ -278,9 +325,12 @@ export default function DashboardPage() {
                       <div className="flex-1">
                         <p className="text-sm font-semibold">{b.category.name}</p>
                         <p className={cn('text-xs', exceeded ? 'text-danger' : 'text-amber-700 dark:text-amber-300')}>
-                          {formatCurrency(b.spent, currency)} de {formatCurrency(b.limit, currency)}
+                          {t('dashboard.amountOf', {
+                            spent: formatCurrency(b.spent, currency),
+                            limit: formatCurrency(b.limit, currency),
+                          })}
                           {' · '}
-                          {exceeded ? 'Excedido' : 'Cerca del límite'}
+                          {exceeded ? t('dashboard.exceeded') : t('dashboard.nearLimit')}
                         </p>
                       </div>
                       <p className={cn('text-sm font-bold', exceeded ? 'text-danger' : 'text-amber-700 dark:text-amber-300')}>
@@ -333,14 +383,16 @@ function CategoryBreakdownView({
   items,
   total,
   currency,
+  totalLabel,
 }: {
   items: DashboardCategoryBreakdown[];
   total: number;
   currency: string;
+  totalLabel: string;
 }) {
   return (
     <div className="grid items-center gap-6 md:grid-cols-2">
-      <DonutChart items={items} total={total} currency={currency} />
+      <DonutChart items={items} total={total} currency={currency} totalLabel={totalLabel} />
       <ul className="space-y-2.5">
         {items.map((c) => (
           <li key={c.id} className="flex items-center justify-between text-sm gap-2">
@@ -368,10 +420,12 @@ function DonutChart({
   items,
   total,
   currency,
+  totalLabel,
 }: {
   items: DashboardCategoryBreakdown[];
   total: number;
   currency: string;
+  totalLabel: string;
 }) {
   const RADIUS = 70;
   const STROKE = 22;
@@ -411,7 +465,7 @@ function DonutChart({
         })}
       </svg>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <p className="text-[11px] uppercase tracking-wide text-muted">Total</p>
+        <p className="text-[11px] uppercase tracking-wide text-muted">{totalLabel}</p>
         <p className="text-xl font-bold">{formatCurrency(total, currency)}</p>
       </div>
     </div>
@@ -421,9 +475,11 @@ function DonutChart({
 function EnvelopeTile({
   envelope,
   currency,
+  goalLabel,
 }: {
   envelope: DashboardEnvelope;
   currency: string;
+  goalLabel: string;
 }) {
   return (
     <Link
@@ -452,7 +508,8 @@ function EnvelopeTile({
             />
           </div>
           <p className="mt-1 text-[11px] text-muted">
-            Meta: {formatCurrency(envelope.targetAmount, currency)} · {Math.round(envelope.progress)}%
+            {goalLabel}: {formatCurrency(envelope.targetAmount, currency)} ·{' '}
+            {Math.round(envelope.progress)}%
           </p>
         </>
       )}
@@ -463,9 +520,13 @@ function EnvelopeTile({
 function RecentTxRow({
   tx,
   currency,
+  incomeLabel,
+  expenseLabel,
 }: {
   tx: DashboardTransaction;
   currency: string;
+  incomeLabel: string;
+  expenseLabel: string;
 }) {
   const isIncome = tx.type === 'income' || tx.type === 'transfer_in';
   const sign = isIncome ? '+' : '−';
@@ -487,7 +548,7 @@ function RecentTxRow({
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium truncate">
-          {tx.description ?? tx.category?.name ?? (isIncome ? 'Ingreso' : 'Gasto')}
+          {tx.description ?? tx.category?.name ?? (isIncome ? incomeLabel : expenseLabel)}
         </p>
         <p className="text-[11px] text-muted truncate">
           <InlineIcon icon={tx.envelope.icon} /> {tx.envelope.name}

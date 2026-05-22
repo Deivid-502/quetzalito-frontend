@@ -9,8 +9,10 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useAuthStore } from '@/stores/auth.store';
 import { ApiError } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 
 export default function RegisterPage() {
+  const t = useT();
   const router = useRouter();
   const register = useAuthStore((s) => s.register);
 
@@ -36,11 +38,11 @@ export default function RegisterPage() {
 
     // Validación rápida en frontend (también está en backend)
     if (form.password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.');
+      setError(t('auth.passwordTooShort'));
       return;
     }
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(form.password)) {
-      setError('La contraseña debe incluir mayúsculas, minúsculas y números.');
+      setError(t('auth.passwordMissingChars'));
       return;
     }
 
@@ -52,8 +54,7 @@ export default function RegisterPage() {
       });
       router.replace('/dashboard');
     } catch (err) {
-      const msg =
-        err instanceof ApiError ? err.message : 'No pudimos crear tu cuenta. Intentá de nuevo.';
+      const msg = err instanceof ApiError ? err.message : t('auth.registerError');
       setError(msg);
     } finally {
       setLoading(false);
@@ -64,16 +65,14 @@ export default function RegisterPage() {
     <Card>
       <CardContent>
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold">Creá tu cuenta</h1>
-          <p className="mt-1 text-sm text-muted">
-            Es gratis. Empezá a tomar el control de tu dinero hoy.
-          </p>
+          <h1 className="text-2xl font-bold">{t('auth.createYourAccount')}</h1>
+          <p className="mt-1 text-sm text-muted">{t('auth.registerHero')}</p>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Nombre"
+              label={t('auth.firstName')}
               name="firstName"
               required
               value={form.firstName}
@@ -81,7 +80,7 @@ export default function RegisterPage() {
               leftIcon={<User className="h-4 w-4" />}
             />
             <Input
-              label="Apellido"
+              label={t('auth.lastName')}
               name="lastName"
               required
               value={form.lastName}
@@ -91,8 +90,8 @@ export default function RegisterPage() {
           </div>
 
           <Input
-            label="Apodo"
-            hint="Así te llamaremos en la app: ‘Hola, David’"
+            label={t('auth.nickname')}
+            hint={t('auth.nicknameHintShort')}
             name="nickname"
             required
             value={form.nickname}
@@ -101,7 +100,7 @@ export default function RegisterPage() {
           />
 
           <Input
-            label="Correo electrónico"
+            label={t('auth.emailFull')}
             name="email"
             type="email"
             autoComplete="email"
@@ -112,17 +111,17 @@ export default function RegisterPage() {
           />
 
           <Input
-            label="Teléfono (opcional)"
+            label={t('auth.phoneOptional')}
             name="phone"
             type="tel"
             value={form.phone}
             onChange={(e) => update('phone', e.target.value)}
             leftIcon={<Phone className="h-4 w-4" />}
-            placeholder="+502 ..."
+            placeholder={t('auth.phonePlaceholder')}
           />
 
           <Input
-            label="Contraseña"
+            label={t('auth.password')}
             name="password"
             type={showPwd ? 'text' : 'password'}
             autoComplete="new-password"
@@ -130,12 +129,13 @@ export default function RegisterPage() {
             value={form.password}
             onChange={(e) => update('password', e.target.value)}
             leftIcon={<Lock className="h-4 w-4" />}
-            hint="Mínimo 8 caracteres con mayúscula, minúscula y número"
+            hint={t('auth.passwordHintFull')}
             rightSlot={
               <button
                 type="button"
                 onClick={() => setShowPwd((v) => !v)}
                 className="text-ink-400 hover:text-ink-600"
+                aria-label={showPwd ? t('auth.hidePassword') : t('auth.showPassword')}
               >
                 {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -149,18 +149,16 @@ export default function RegisterPage() {
           )}
 
           <Button type="submit" loading={loading} fullWidth size="lg">
-            Crear cuenta
+            {t('auth.registerBtn')}
           </Button>
 
-          <p className="text-center text-[11px] text-muted">
-            Al registrarte aceptás nuestros Términos y Política de privacidad.
-          </p>
+          <p className="text-center text-[11px] text-muted">{t('auth.termsAccept2')}</p>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted">
-          ¿Ya tenés cuenta?{' '}
+          {t('auth.hasAccount')}{' '}
           <Link href="/login" className="font-semibold text-brand-600 hover:underline">
-            Iniciar sesión
+            {t('auth.signInLink')}
           </Link>
         </p>
       </CardContent>

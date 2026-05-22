@@ -28,12 +28,14 @@ import { useTransactionModal } from '@/components/transactions/TransactionModalP
 import { useAuthStore } from '@/stores/auth.store';
 import { cn, formatCurrency } from '@/lib/utils';
 import { toast } from '@/components/ui/Toaster';
+import { useT } from '@/lib/i18n';
 
 interface PageProps {
   params: { id: string };
 }
 
 export default function EnvelopeDetailPage({ params }: PageProps) {
+  const t = useT();
   const { id } = params;
   const router = useRouter();
 
@@ -60,11 +62,11 @@ export default function EnvelopeDetailPage({ params }: PageProps) {
     return (
       <div className="space-y-4">
         <Link href="/sobres" className="inline-flex items-center gap-1 text-sm text-muted hover:underline">
-          <ArrowLeft className="h-4 w-4" /> Volver a sobres
+          <ArrowLeft className="h-4 w-4" /> {t('envelopes.backToList')}
         </Link>
         <Card>
           <CardContent>
-            <p className="text-sm text-danger">{error ?? 'Sobre no encontrado.'}</p>
+            <p className="text-sm text-danger">{error ?? t('envelopes.notFound')}</p>
           </CardContent>
         </Card>
       </div>
@@ -76,7 +78,7 @@ export default function EnvelopeDetailPage({ params }: PageProps) {
   return (
     <div className="space-y-6">
       <Link href="/sobres" className="inline-flex items-center gap-1 text-sm text-muted hover:underline">
-        <ArrowLeft className="h-4 w-4" /> Volver a sobres
+        <ArrowLeft className="h-4 w-4" /> {t('envelopes.backToList')}
       </Link>
 
       {/* Header con identidad del sobre */}
@@ -106,7 +108,7 @@ export default function EnvelopeDetailPage({ params }: PageProps) {
                 onClick={() => openTxModal({ defaultEnvelopeId: envelope.id })}
                 className="!bg-white !text-ink-900 hover:!bg-white/90"
               >
-                <Plus className="h-4 w-4" /> Movimiento
+                <Plus className="h-4 w-4" /> {t('transactions.movement')}
               </Button>
               <Button
                 variant="secondary"
@@ -114,7 +116,7 @@ export default function EnvelopeDetailPage({ params }: PageProps) {
                 onClick={() => setTransferOpen(true)}
                 className="!bg-white/20 !text-white !border-white/30 hover:!bg-white/30"
               >
-                <ArrowLeftRight className="h-4 w-4" /> Transferir
+                <ArrowLeftRight className="h-4 w-4" /> {t('envelopes.transfer')}
               </Button>
               <Button
                 variant="secondary"
@@ -122,7 +124,7 @@ export default function EnvelopeDetailPage({ params }: PageProps) {
                 onClick={() => setEditOpen(true)}
                 className="!bg-white/20 !text-white !border-white/30 hover:!bg-white/30"
               >
-                <Pencil className="h-4 w-4" /> Editar
+                <Pencil className="h-4 w-4" /> {t('common.edit')}
               </Button>
               {!envelope.isMain && (
                 <Button
@@ -131,14 +133,14 @@ export default function EnvelopeDetailPage({ params }: PageProps) {
                   onClick={() => setConfirmArchive(true)}
                   className="!bg-white/20 !text-white !border-white/30 hover:!bg-white/30"
                 >
-                  <Archive className="h-4 w-4" /> Archivar
+                  <Archive className="h-4 w-4" /> {t('envelopes.archive')}
                 </Button>
               )}
             </div>
           </div>
 
           <div className="mt-6">
-            <p className="text-sm opacity-80">Saldo actual</p>
+            <p className="text-sm opacity-80">{t('envelopes.currentBalance')}</p>
             <p className="mt-1 text-4xl font-bold sm:text-5xl">
               {formatCurrency(envelope.currentBalance, currency)}
             </p>
@@ -148,7 +150,8 @@ export default function EnvelopeDetailPage({ params }: PageProps) {
             <div className="mt-5">
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-1.5 opacity-90">
-                  <Target className="h-4 w-4" /> Meta: {formatCurrency(envelope.targetAmount, currency)}
+                  <Target className="h-4 w-4" /> {t('envelopes.target')}:{' '}
+                  {formatCurrency(envelope.targetAmount, currency)}
                 </span>
                 <span className="font-semibold">{Math.round(stats.progress)}%</span>
               </div>
@@ -169,7 +172,7 @@ export default function EnvelopeDetailPage({ params }: PageProps) {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted">Ingresos del mes</p>
+                <p className="text-sm text-muted">{t('dashboard.monthIncome')}</p>
                 <p className="mt-1 text-2xl font-bold text-brand-600">
                   +{formatCurrency(stats.monthIncome, currency)}
                 </p>
@@ -184,7 +187,7 @@ export default function EnvelopeDetailPage({ params }: PageProps) {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted">Gastos del mes</p>
+                <p className="text-sm text-muted">{t('dashboard.monthExpense')}</p>
                 <p className="mt-1 text-2xl font-bold text-danger">
                   −{formatCurrency(stats.monthExpense, currency)}
                 </p>
@@ -201,17 +204,17 @@ export default function EnvelopeDetailPage({ params }: PageProps) {
       <Card>
         <CardContent>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold">Movimientos recientes</h3>
-            <span className="text-xs text-muted">Últimos 20</span>
+            <h3 className="font-semibold">{t('envelopes.recentMovements')}</h3>
+            <span className="text-xs text-muted">{t('envelopes.lastN', { n: 20 })}</span>
           </div>
           {recentTransactions.length === 0 ? (
             <EmptyState
               icon={<Calendar className="h-7 w-7" />}
-              title="Aún no hay movimientos"
-              description="Cuando registres ingresos o gastos en este sobre aparecerán acá."
+              title={t('envelopes.noMovementsTitle')}
+              description={t('envelopes.noMovementsDesc')}
               action={
                 <Button onClick={() => openTxModal({ defaultEnvelopeId: envelope.id })}>
-                  <Plus className="h-4 w-4" /> Nuevo movimiento
+                  <Plus className="h-4 w-4" /> {t('transactions.newMovement')}
                 </Button>
               }
             />
@@ -253,16 +256,18 @@ export default function EnvelopeDetailPage({ params }: PageProps) {
       <ConfirmDialog
         open={confirmArchive}
         onClose={() => setConfirmArchive(false)}
-        title="¿Archivar este sobre?"
+        title={t('envelopes.archiveConfirmTitle')}
         description={
           envelope.currentBalance > 0
-            ? `Su saldo de ${formatCurrency(envelope.currentBalance, currency)} se moverá a tu cuenta principal.`
-            : 'Lo podrás recuperar más tarde si querés.'
+            ? t('envelopes.archiveWithBalance', {
+                amount: formatCurrency(envelope.currentBalance, currency),
+              })
+            : t('envelopes.archiveNoBalance')
         }
-        confirmLabel="Archivar"
+        confirmLabel={t('envelopes.archive')}
         onConfirm={async () => {
           await archive(envelope.id);
-          toast.success('Sobre archivado.');
+          toast.success(t('envelopes.archivedToast'));
           router.replace('/sobres');
         }}
       />

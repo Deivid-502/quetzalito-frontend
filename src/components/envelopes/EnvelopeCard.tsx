@@ -5,6 +5,7 @@ import { Pencil, Archive, Trash2, MoreVertical, Star } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { CategoryIcon } from '@/lib/icons';
 import { cn, formatCurrency } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 import type { Envelope } from '@/types/envelope';
 
 interface Props {
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function EnvelopeCard({ envelope, currency, onEdit, onArchive, onDelete, href }: Props) {
+  const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -59,7 +61,7 @@ export function EnvelopeCard({ envelope, currency, onEdit, onArchive, onDelete, 
               <p className="font-semibold truncate flex items-center gap-1.5">
                 {envelope.name}
                 {envelope.isMain && (
-                  <Star className="h-3.5 w-3.5 fill-gold-500 text-gold-500" aria-label="Principal" />
+                  <Star className="h-3.5 w-3.5 fill-gold-500 text-gold-500" aria-label={t('envelopes.mainAccount')} />
                 )}
               </p>
               {envelope.description && (
@@ -77,7 +79,7 @@ export function EnvelopeCard({ envelope, currency, onEdit, onArchive, onDelete, 
                   setMenuOpen((v) => !v);
                 }}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-ink-100 dark:hover:bg-ink-700/40"
-                aria-label="Opciones"
+                aria-label={t('common.options')}
               >
                 <MoreVertical className="h-4 w-4" />
               </button>
@@ -91,12 +93,12 @@ export function EnvelopeCard({ envelope, currency, onEdit, onArchive, onDelete, 
                 >
                   {onEdit && (
                     <MenuBtn icon={<Pencil className="h-4 w-4" />} onClick={() => { setMenuOpen(false); onEdit(); }}>
-                      Editar
+                      {t('common.edit')}
                     </MenuBtn>
                   )}
                   {onArchive && (
                     <MenuBtn icon={<Archive className="h-4 w-4" />} onClick={() => { setMenuOpen(false); onArchive(); }}>
-                      Archivar
+                      {t('envelopes.archive')}
                     </MenuBtn>
                   )}
                   {onDelete && (
@@ -105,7 +107,7 @@ export function EnvelopeCard({ envelope, currency, onEdit, onArchive, onDelete, 
                       onClick={() => { setMenuOpen(false); onDelete(); }}
                       danger
                     >
-                      Eliminar
+                      {t('envelopes.delete')}
                     </MenuBtn>
                   )}
                 </div>
@@ -125,7 +127,8 @@ export function EnvelopeCard({ envelope, currency, onEdit, onArchive, onDelete, 
               />
             </div>
             <p className="mt-1.5 text-[11px] text-muted">
-              Meta: {formatCurrency(envelope.targetAmount, currency)} · {Math.round(progress)}%
+              {t('dashboard.goal')}: {formatCurrency(envelope.targetAmount, currency)} ·{' '}
+              {Math.round(progress)}%
             </p>
           </>
         )}

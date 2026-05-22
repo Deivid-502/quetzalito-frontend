@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { ApiError } from '@/lib/api';
 import { toast } from '@/components/ui/Toaster';
 import { CategoryIcon } from '@/lib/icons';
+import { useT } from '@/lib/i18n';
 import {
   ENVELOPE_COLORS,
   ENVELOPE_ICONS,
@@ -37,6 +38,7 @@ export function EnvelopeFormModal({
   currency,
   onSubmit,
 }: Props) {
+  const t = useT();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [icon, setIcon] = useState<string>(ENVELOPE_ICONS[0]);
@@ -72,7 +74,7 @@ export function EnvelopeFormModal({
     setError(null);
 
     if (!name.trim()) {
-      setError('El nombre es obligatorio.');
+      setError(t('envelopes.errorNameRequired'));
       return;
     }
 
@@ -80,11 +82,11 @@ export function EnvelopeFormModal({
     const initialNum = initial ? parseFloat(initial) : undefined;
 
     if (targetNum !== undefined && (Number.isNaN(targetNum) || targetNum < 0)) {
-      setError('La meta debe ser un número válido.');
+      setError(t('envelopes.errorTargetInvalid'));
       return;
     }
     if (initialNum !== undefined && (Number.isNaN(initialNum) || initialNum < 0)) {
-      setError('El saldo inicial debe ser un número válido.');
+      setError(t('envelopes.errorInitialInvalid'));
       return;
     }
     if (
@@ -93,7 +95,7 @@ export function EnvelopeFormModal({
       mainEnvelopeBalance !== undefined &&
       initialNum > mainEnvelopeBalance
     ) {
-      setError('No tenés suficiente saldo en la cuenta principal.');
+      setError(t('envelopes.errorInsufficientMain'));
       return;
     }
 
@@ -108,7 +110,7 @@ export function EnvelopeFormModal({
           targetAmount: targetNum,
           initialAmount: initialNum,
         } satisfies CreateEnvelopePayload);
-        toast.success('Sobre creado correctamente.');
+        toast.success(t('envelopes.createdToast'));
       } else {
         await onSubmit({
           name: name.trim(),
@@ -117,11 +119,11 @@ export function EnvelopeFormModal({
           color,
           targetAmount: target === '' ? null : targetNum,
         } satisfies UpdateEnvelopePayload);
-        toast.success('Sobre actualizado.');
+        toast.success(t('envelopes.updatedToast'));
       }
       onClose();
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'No pudimos guardar el sobre.';
+      const msg = err instanceof ApiError ? err.message : t('envelopes.errorSave');
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -132,36 +134,32 @@ export function EnvelopeFormModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={mode === 'create' ? 'Nuevo sobre' : 'Editar sobre'}
-      description={
-        mode === 'create'
-          ? 'Creá un compartimento para organizar tu dinero por propósito.'
-          : 'Modificá el nombre, ícono, color o meta.'
-      }
+      title={mode === 'create' ? t('envelopes.createEnvelope') : t('envelopes.editEnvelope')}
+      description={mode === 'create' ? t('envelopes.createDesc') : t('envelopes.editDesc')}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
-          label="Nombre"
+          label={t('envelopes.nameLabel')}
           name="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Ej. Comida, Ahorro viaje..."
+          placeholder={t('envelopes.namePlaceholder')}
           maxLength={50}
           required
         />
 
         <Input
-          label="Descripción (opcional)"
+          label={t('envelopes.descriptionLabel')}
           name="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="¿Para qué es este sobre?"
+          placeholder={t('envelopes.descriptionPlaceholder')}
         />
 
         {/* Selector de ícono */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-200">
-            Ícono
+            {t('envelopes.iconLabel')}
           </label>
           <div className="flex flex-wrap gap-1.5 rounded-xl border border-ink-200 p-2 dark:border-ink-700">
             {ENVELOPE_ICONS.map((emoji) => (
@@ -175,7 +173,7 @@ export function EnvelopeFormModal({
                     ? 'bg-brand-500/20 ring-2 ring-brand-500'
                     : 'hover:bg-ink-100 dark:hover:bg-ink-700/40',
                 )}
-                aria-label={`Icono ${emoji}`}
+                aria-label={t('envelopes.iconAria', { emoji })}
               >
                 {emoji}
               </button>
@@ -186,7 +184,7 @@ export function EnvelopeFormModal({
         {/* Selector de color */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-200">
-            Color
+            {t('envelopes.color')}
           </label>
           <div className="flex flex-wrap gap-2">
             {ENVELOPE_COLORS.map((c) => (
@@ -199,14 +197,14 @@ export function EnvelopeFormModal({
                   'h-8 w-8 rounded-full transition-all',
                   color === c ? 'ring-2 ring-offset-2 ring-ink-900 dark:ring-white scale-110' : 'opacity-80 hover:opacity-100',
                 )}
-                aria-label={`Color ${c}`}
+                aria-label={t('envelopes.colorAria', { color: c })}
               />
             ))}
           </div>
         </div>
 
         <Input
-          label="Meta de ahorro (opcional)"
+          label={t('envelopes.targetLabel')}
           name="target"
           type="number"
           step="0.01"
@@ -214,12 +212,12 @@ export function EnvelopeFormModal({
           value={target}
           onChange={(e) => setTarget(e.target.value)}
           placeholder="0.00"
-          hint={`Cuánto querés juntar en este sobre. En ${currency}.`}
+          hint={t('envelopes.targetHint', { currency })}
         />
 
         {mode === 'create' && (
           <Input
-            label="Saldo inicial desde tu cuenta principal (opcional)"
+            label={t('envelopes.initialLabel')}
             name="initial"
             type="number"
             step="0.01"
@@ -229,15 +227,20 @@ export function EnvelopeFormModal({
             placeholder="0.00"
             hint={
               mainEnvelopeBalance !== undefined
-                ? `Disponible: ${mainEnvelopeBalance.toFixed(2)} ${currency}`
-                : 'Se mueve desde tu cuenta principal.'
+                ? t('envelopes.initialAvailable', {
+                    amount: mainEnvelopeBalance.toFixed(2),
+                    currency,
+                  })
+                : t('envelopes.initialFromMain')
             }
           />
         )}
 
         {/* Preview */}
         <div className="rounded-xl border border-ink-200 p-4 dark:border-ink-700">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Vista previa</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+            {t('envelopes.preview')}
+          </p>
           <div className="flex items-center gap-3">
             <span
               className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
@@ -245,7 +248,7 @@ export function EnvelopeFormModal({
             >
               <CategoryIcon name={icon} className="h-5 w-5" />
             </span>
-            <p className="font-semibold">{name || 'Nombre del sobre'}</p>
+            <p className="font-semibold">{name || t('envelopes.namePlaceholderPreview')}</p>
           </div>
         </div>
 
@@ -257,10 +260,10 @@ export function EnvelopeFormModal({
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
+            {t('common.cancel')}
           </Button>
           <Button type="submit" loading={submitting}>
-            {mode === 'create' ? 'Crear sobre' : 'Guardar cambios'}
+            {mode === 'create' ? t('envelopes.createEnvelope') : t('common.saveChanges')}
           </Button>
         </div>
       </form>

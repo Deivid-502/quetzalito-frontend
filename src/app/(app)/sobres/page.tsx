@@ -15,11 +15,13 @@ import { useEnvelopes } from '@/hooks/useEnvelopes';
 import { useAuthStore } from '@/stores/auth.store';
 import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from '@/components/ui/Toaster';
+import { useT } from '@/lib/i18n';
 import type { Envelope } from '@/types/envelope';
 
 const FREE_ENVELOPE_LIMIT = 5;
 
 export default function SobresPage() {
+  const t = useT();
   const user = useAuthStore((s) => s.user);
   const currency = user?.currencyCode ?? 'GTQ';
 
@@ -65,15 +67,15 @@ export default function SobresPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sobres</h1>
-          <p className="text-muted">Organizá tu dinero por propósito.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('envelopes.title')}</h1>
+          <p className="text-muted">{t('envelopes.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setTransferOpen(true)} disabled={envelopes.length < 2}>
-            <ArrowLeftRight className="h-4 w-4" /> Transferir
+            <ArrowLeftRight className="h-4 w-4" /> {t('envelopes.transfer')}
           </Button>
           <Button onClick={openCreate} disabled={reachedLimit}>
-            <Plus className="h-4 w-4" /> Nuevo sobre
+            <Plus className="h-4 w-4" /> {t('envelopes.create')}
           </Button>
         </div>
       </div>
@@ -90,18 +92,16 @@ export default function SobresPage() {
         >
           <div>
             <p className="font-medium">
-              {envelopes.length} de {FREE_ENVELOPE_LIMIT} sobres usados
+              {t('envelopes.usedOf', { used: envelopes.length, total: FREE_ENVELOPE_LIMIT })}
             </p>
             {reachedLimit && (
-              <p className="text-xs opacity-90 mt-0.5">
-                Llegaste al límite del plan Free. Hacete Premium para sobres ilimitados.
-              </p>
+              <p className="text-xs opacity-90 mt-0.5">{t('envelopes.limitReachedShort')}</p>
             )}
           </div>
           {reachedLimit && (
             <Link href="/premium">
               <Button variant="gold" size="sm">
-                <Crown className="h-4 w-4" /> Hazte Premium
+                <Crown className="h-4 w-4" /> {t('envelopes.upgradeNow')}
               </Button>
             </Link>
           )}
@@ -116,7 +116,7 @@ export default function SobresPage() {
               <Wallet className="h-6 w-6" />
             </span>
             <div>
-              <p className="text-sm text-muted">Saldo total entre tus sobres</p>
+              <p className="text-sm text-muted">{t('envelopes.totalBalance')}</p>
               <p className="text-3xl font-bold">{formatCurrency(totalBalance, currency)}</p>
             </div>
           </div>
@@ -144,7 +144,7 @@ export default function SobresPage() {
           {main && (
             <div>
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-                Cuenta principal
+                {t('envelopes.mainAccount')}
               </h2>
               <EnvelopeCard
                 envelope={main}
@@ -157,16 +157,16 @@ export default function SobresPage() {
 
           <div>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-              Tus sobres ({others.length})
+              {t('envelopes.yourEnvelopesCount', { n: others.length })}
             </h2>
             {others.length === 0 ? (
               <EmptyState
                 icon={<Wallet className="h-7 w-7" />}
-                title="Creá tu primer sobre"
-                description="Los sobres te ayudan a separar tu dinero por categoría: comida, ahorro, viaje, lo que vos quieras."
+                title={t('envelopes.firstEnvelopeTitle')}
+                description={t('envelopes.firstEnvelopeDesc')}
                 action={
                   <Button onClick={openCreate}>
-                    <Plus className="h-4 w-4" /> Crear sobre
+                    <Plus className="h-4 w-4" /> {t('envelopes.createEnvelope')}
                   </Button>
                 }
               />
@@ -211,31 +211,33 @@ export default function SobresPage() {
       <ConfirmDialog
         open={!!confirmArchive}
         onClose={() => setConfirmArchive(null)}
-        title="¿Archivar este sobre?"
+        title={t('envelopes.archiveConfirmTitle')}
         description={
           confirmArchive && confirmArchive.currentBalance > 0
-            ? `Tiene un saldo de ${formatCurrency(confirmArchive.currentBalance, currency)} que se moverá a tu cuenta principal.`
-            : 'Lo podrás recuperar más tarde si querés.'
+            ? t('envelopes.archiveWithBalance', {
+                amount: formatCurrency(confirmArchive.currentBalance, currency),
+              })
+            : t('envelopes.archiveNoBalance')
         }
-        confirmLabel="Archivar"
+        confirmLabel={t('envelopes.archive')}
         onConfirm={async () => {
           if (!confirmArchive) return;
           await archive(confirmArchive.id);
-          toast.success('Sobre archivado.');
+          toast.success(t('envelopes.archivedToast'));
         }}
       />
 
       <ConfirmDialog
         open={!!confirmDelete}
         onClose={() => setConfirmDelete(null)}
-        title="¿Eliminar este sobre?"
-        description="Esta acción es permanente. Solo se permite eliminar sobres sin movimientos y con saldo cero."
-        confirmLabel="Eliminar"
+        title={t('envelopes.deleteConfirm')}
+        description={t('envelopes.deleteConfirmDesc')}
+        confirmLabel={t('envelopes.delete')}
         destructive
         onConfirm={async () => {
           if (!confirmDelete) return;
           await remove(confirmDelete.id);
-          toast.success('Sobre eliminado.');
+          toast.success(t('envelopes.deleted'));
         }}
       />
 

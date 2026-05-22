@@ -1,16 +1,18 @@
 'use client';
 
 import { FormEvent, useEffect, useState, useMemo } from 'react';
-import { Loader2, Wallet, ArrowDownLeft, ArrowUpRight, ChevronDown } from 'lucide-react';
+import { Loader2, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Select, type SelectOption } from '@/components/ui/Select';
 import { CategoryIcon } from '@/lib/icons';
 import { cn, formatCurrency } from '@/lib/utils';
 import { ApiError } from '@/lib/api';
 import { toast } from '@/components/ui/Toaster';
 import { useEnvelopes } from '@/hooks/useEnvelopes';
 import { useCategories } from '@/hooks/useCategories';
+import { useT } from '@/lib/i18n';
 import type { CreateTransactionPayload } from '@/types/transaction';
 
 interface Props {
@@ -30,6 +32,7 @@ export function TransactionFormModal({
   currency,
   onSubmit,
 }: Props) {
+  const t = useT();
   const { envelopes } = useEnvelopes();
   const [type, setType] = useState<'income' | 'expense'>(defaultType);
   const { categories, loading: catLoading } = useCategories(type);
@@ -70,16 +73,31 @@ export function TransactionFormModal({
     !Number.isNaN(numericAmount) &&
     numericAmount > selectedEnvelope.currentBalance;
 
+  // Opciones del Listbox para sobres
+  const envelopeOptions: SelectOption<string>[] = activeEnvelopes.map((e) => ({
+    value: e.id,
+    label: e.name,
+    leading: (
+      <span
+        className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0"
+        style={{ background: `${e.color}1A` }}
+      >
+        <CategoryIcon name={e.icon} className="h-3.5 w-3.5" />
+      </span>
+    ),
+    trailing: formatCurrency(e.currentBalance, currency),
+  }));
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
 
     if (!envelopeId) {
-      setError('Seleccioná un sobre.');
+      setError(t('validation.requiredFields'));
       return;
     }
     if (Number.isNaN(numericAmount) || numericAmount <= 0) {
-      setError('Ingresá un monto válido.');
+      setError(t('validation.amountPositive'));
       return;
     }
 
@@ -93,10 +111,10 @@ export function TransactionFormModal({
         description: description.trim() || undefined,
         occurredAt: occurredAt ? new Date(occurredAt).toISOString() : undefined,
       });
-      toast.success(type === 'income' ? '¡Ingreso registrado!' : '¡Gasto registrado!');
+      toast.success(t('transactions.created'));
       onClose();
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'No pudimos guardar el movimiento.';
+      const msg = err instanceof ApiError ? err.message : t('common.error');
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -107,8 +125,8 @@ export function TransactionFormModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Nuevo movimiento"
-      description="Registrá tu gasto o ingreso en pocos segundos."
+      title={t('transactions.add')}
+      description={undefined}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -117,14 +135,14 @@ export function TransactionFormModal({
           <TypeToggle
             active={type === 'expense'}
             onClick={() => setType('expense')}
-            label="Gasto"
+            label={t('transactions.expense')}
             icon={<ArrowUpRight className="h-4 w-4" />}
             color="danger"
           />
           <TypeToggle
             active={type === 'income'}
             onClick={() => setType('income')}
-            label="Ingreso"
+            label={t('transactions.income')}
             icon={<ArrowDownLeft className="h-4 w-4" />}
             color="success"
           />
@@ -133,7 +151,7 @@ export function TransactionFormModal({
         {/* Monto grande, foco principal */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-200">
-            Monto
+            {t('common.amount')}
           </label>
           <div className="rounded-xl border surface px-4 py-3 border-ink-200 dark:border-ink-700">
             <div className="flex items-baseline gap-2">
@@ -154,57 +172,29 @@ export function TransactionFormModal({
           </div>
           {insufficient && (
             <p className="mt-1.5 text-xs text-amber-600">
-              ⚠️ Excede el saldo del sobre. Se permitirá pero quedará en negativo.
+              ⚠️ {t('envelopes.transferInsufficient')}
             </p>
           )}
         </div>
 
-        {/* Sobre */}
+        {/* Sobre — Listbox custom */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-200">
-            Sobre
+            {t('common.envelope')}
           </label>
-          <div className="rounded-xl border surface px-3 py-2.5 border-ink-200 dark:border-ink-700">
-            <div className="flex items-center gap-2">
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-base shrink-0"
-                style={{
-                  background: selectedEnvelope ? `${selectedEnvelope.color}1A` : '#f1f5f9',
-                }}
-              >
-                {selectedEnvelope ? (
-                  <CategoryIcon name={selectedEnvelope.icon} className="h-4 w-4" />
-                ) : (
-                  <Wallet className="h-4 w-4 text-muted" />
-                )}
-              </span>
-              <select
-                value={envelopeId}
-                onChange={(e) => setEnvelopeId(e.target.value)}
-                className="flex-1 appearance-none bg-transparent pr-6 text-sm font-medium outline-none [&>option]:bg-white [&>option]:text-ink-700 dark:[&>option]:bg-ink-800 dark:[&>option]:text-ink-100"
-                required
-              >
-                {activeEnvelopes.length === 0 && <option value="">— Sin sobres —</option>}
-                {activeEnvelopes.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none -ml-5 h-4 w-4 text-ink-400" />
-              {selectedEnvelope && (
-                <span className="text-xs text-muted shrink-0">
-                  {formatCurrency(selectedEnvelope.currentBalance, currency)}
-                </span>
-              )}
-            </div>
-          </div>
+          <Select
+            options={envelopeOptions}
+            value={envelopeId}
+            onChange={setEnvelopeId}
+            placeholder={t('envelopes.empty')}
+            ariaLabel={t('common.envelope')}
+          />
         </div>
 
         {/* Categorías como grilla visual */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-200">
-            Categoría
+            {t('common.category')}
           </label>
           {catLoading ? (
             <div className="flex items-center justify-center py-8">
@@ -245,14 +235,14 @@ export function TransactionFormModal({
         {/* Descripción + fecha */}
         <div className="grid gap-3 sm:grid-cols-2">
           <Input
-            label="Descripción (opcional)"
+            label={t('common.descriptionOptional')}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ej. Almuerzo, Uber..."
+            placeholder={t('transactions.descriptionPlaceholder')}
             maxLength={255}
           />
           <Input
-            label="Fecha y hora"
+            label={t('common.date')}
             type="datetime-local"
             value={occurredAt}
             onChange={(e) => setOccurredAt(e.target.value)}
@@ -267,10 +257,10 @@ export function TransactionFormModal({
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
+            {t('common.cancel')}
           </Button>
-          <Button type="submit" loading={submitting} variant={type === 'income' ? 'primary' : 'primary'}>
-            Guardar {type === 'income' ? 'ingreso' : 'gasto'}
+          <Button type="submit" loading={submitting}>
+            {type === 'income' ? t('transactions.addIncome') : t('transactions.addExpense')}
           </Button>
         </div>
       </form>

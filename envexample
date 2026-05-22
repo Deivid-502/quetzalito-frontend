@@ -1,0 +1,10 @@
+# =====================================================
+#  Quetzalito Frontend — Variables de entorno
+#  Copiar a .env.local para desarrollo local
+#  En Vercel: configurar en Project → Settings → Environment Variables
+# =====================================================
+
+# URL del backend (NestJS en Render)
+# Dev local:   http://localhost:3001
+# Producción:  https://quetzalito-api.onrender.com
+NEXT_PUBLIC_API_URL=http://localhost:3001

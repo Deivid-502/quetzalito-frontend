@@ -199,11 +199,11 @@ export default function AjustesPage() {
           <h3 className="mb-4 font-semibold">{t('settings.plan')}</h3>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">{user?.isPremium ? 'Premium' : 'Free'}</p>
+              <p className="text-sm font-medium">
+                {user?.isPremium ? t('settings.planPremium') : t('settings.planFree')}
+              </p>
               <p className="text-xs text-muted">
-                {user?.isPremium
-                  ? 'Disfrutá todas las funciones premium'
-                  : 'Subí a Premium para más alcancías y sin anuncios'}
+                {user?.isPremium ? t('settings.planPremiumDesc') : t('settings.planFreeDesc')}
               </p>
             </div>
             {!user?.isPremium && (
@@ -224,7 +224,7 @@ export default function AjustesPage() {
               description={
                 user?.isPremium
                   ? t('settings.cancelSubscriptionDesc')
-                  : t('settings.budgetsDesc') /* placeholder amistoso para usuarios Free */
+                  : t('settings.managePlanDesc')
               }
             />
           </div>

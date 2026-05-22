@@ -3,6 +3,7 @@
 import { CloudOff, RefreshCw } from 'lucide-react';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 
 /**
  * Mini-chip que aparece en el header cuando:
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils';
  * Se OCULTA cuando estás online sin pendientes (no agrega ruido visual).
  */
 export function OnlineIndicator() {
+  const t = useT();
   const { online, pendingCount, syncing, sync } = useOfflineQueue();
 
   // Caso 1: todo bien — no mostramos nada
@@ -26,10 +28,10 @@ export function OnlineIndicator() {
           'border-amber-300 bg-amber-50 text-amber-800',
           'dark:border-amber-700/50 dark:bg-amber-900/20 dark:text-amber-300',
         )}
-        title="Estás sin conexión. Tus cambios se guardan localmente."
+        title={t('offline.offlineTitle')}
       >
         <CloudOff className="h-3 w-3" />
-        Offline
+        {t('offline.offline')}
         {pendingCount > 0 && <span className="opacity-80">· {pendingCount}</span>}
       </span>
     );
@@ -46,7 +48,7 @@ export function OnlineIndicator() {
         )}
       >
         <RefreshCw className="h-3 w-3 animate-spin" />
-        Sincronizando…
+        {t('offline.syncing')}
       </span>
     );
   }
@@ -60,10 +62,12 @@ export function OnlineIndicator() {
         'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100',
         'dark:border-amber-700/50 dark:bg-amber-900/20 dark:text-amber-300',
       )}
-      title="Reintentar sincronización"
+      title={t('offline.retrySync')}
     >
       <RefreshCw className="h-3 w-3" />
-      {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}
+      {pendingCount === 1
+        ? t('offline.pending', { n: pendingCount })
+        : t('offline.pendingPlural', { n: pendingCount })}
     </button>
   );
 }

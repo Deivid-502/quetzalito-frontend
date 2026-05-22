@@ -8,9 +8,16 @@ import { BudgetFormModal } from '@/components/budgets/BudgetFormModal';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn, formatCurrency } from '@/lib/utils';
+import { useT, useLanguage } from '@/lib/i18n';
 import type { BudgetItem } from '@/types/budget';
 
+function bcp47(lang: 'es' | 'en'): string {
+  return lang === 'es' ? 'es-GT' : 'en-US';
+}
+
 export default function PresupuestosPage() {
+  const t = useT();
+  const { language } = useLanguage();
   const user = useAuthStore((s) => s.user);
   const currency = user?.currencyCode ?? 'GTQ';
 
@@ -30,7 +37,7 @@ export default function PresupuestosPage() {
     setYear(y);
   }
 
-  const monthLabel = new Date(year, month - 1).toLocaleDateString('es-GT', {
+  const monthLabel = new Date(year, month - 1).toLocaleDateString(bcp47(language), {
     month: 'long',
     year: 'numeric',
   });
@@ -45,14 +52,14 @@ export default function PresupuestosPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Presupuestos</h1>
-          <p className="text-muted">Decidí cuánto querés gastar al mes en cada categoría.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('budgets.title')}</h1>
+          <p className="text-muted">{t('budgets.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-ink-200 px-2 py-1 dark:border-ink-700">
           <button
             onClick={() => shiftMonth(-1)}
             className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-ink-100 dark:hover:bg-ink-700/40"
-            aria-label="Mes anterior"
+            aria-label={t('budgets.prevMonth')}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -62,7 +69,7 @@ export default function PresupuestosPage() {
           <button
             onClick={() => shiftMonth(1)}
             className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-ink-100 dark:hover:bg-ink-700/40"
-            aria-label="Mes siguiente"
+            aria-label={t('budgets.nextMonth')}
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -86,7 +93,7 @@ export default function PresupuestosPage() {
                 : 'bg-gradient-to-br from-brand-500 to-brand-700 text-white',
             )}>
               <div className="flex items-center gap-2 text-sm opacity-90">
-                <Target className="h-4 w-4" /> Presupuesto total del mes
+                <Target className="h-4 w-4" /> {t('budgets.totalMonth')}
               </div>
               <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
                 <div>
@@ -94,12 +101,14 @@ export default function PresupuestosPage() {
                     {formatCurrency(totals?.spent ?? 0, currency)}
                   </p>
                   <p className="opacity-80 text-sm">
-                    de {formatCurrency(totals?.budgeted ?? 0, currency)} presupuestados
+                    {t('budgets.ofBudgeted', {
+                      amount: formatCurrency(totals?.budgeted ?? 0, currency),
+                    })}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold">{Math.round(totals?.percent ?? 0)}%</p>
-                  <p className="opacity-80 text-xs">usado</p>
+                  <p className="opacity-80 text-xs">{t('budgets.used')}</p>
                 </div>
               </div>
               {totals && totals.budgeted > 0 && (
@@ -114,7 +123,9 @@ export default function PresupuestosPage() {
             {totals && totals.percent >= 100 && (
               <div className="flex items-center gap-3 border-t border-red-200 bg-red-50 px-6 py-3 text-sm text-red-800 dark:border-red-700/50 dark:bg-red-900/20 dark:text-red-300">
                 <AlertTriangle className="h-5 w-5 shrink-0" />
-                <p>Excediste el presupuesto total del mes en {formatCurrency(totals.spent - totals.budgeted, currency)}.</p>
+                <p>{t('budgets.exceededBy', {
+                  amount: formatCurrency(totals.spent - totals.budgeted, currency),
+                })}</p>
               </div>
             )}
           </Card>
@@ -123,7 +134,7 @@ export default function PresupuestosPage() {
           {withBudget.length > 0 && (
             <div>
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-                Con presupuesto definido ({withBudget.length})
+                {t('budgets.withDefinedCount', { n: withBudget.length })}
               </h2>
               <div className="grid gap-3 md:grid-cols-2">
                 {withBudget.map((item) => (
@@ -142,7 +153,7 @@ export default function PresupuestosPage() {
           {withoutBudget.length > 0 && (
             <div>
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-                Sin presupuesto ({withoutBudget.length})
+                {t('budgets.withoutDefinedCount', { n: withoutBudget.length })}
               </h2>
               <div className="grid gap-3 md:grid-cols-2">
                 {withoutBudget.map((item) => (

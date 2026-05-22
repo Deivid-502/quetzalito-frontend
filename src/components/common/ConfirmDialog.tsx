@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { ApiError } from '@/lib/api';
 import { toast } from '@/components/ui/Toaster';
+import { useT } from '@/lib/i18n';
 
 interface Props {
   open: boolean;
@@ -22,10 +23,11 @@ export function ConfirmDialog({
   onClose,
   title,
   description,
-  confirmLabel = 'Confirmar',
+  confirmLabel,
   destructive,
   onConfirm,
 }: Props) {
+  const t = useT();
   const [loading, setLoading] = useState(false);
 
   async function handleConfirm() {
@@ -34,7 +36,7 @@ export function ConfirmDialog({
       await onConfirm();
       onClose();
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Algo salió mal.';
+      const msg = err instanceof ApiError ? err.message : t('common.error');
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -52,14 +54,14 @@ export function ConfirmDialog({
       </div>
       <div className="mt-5 flex justify-center gap-2">
         <Button variant="ghost" onClick={onClose} disabled={loading}>
-          Cancelar
+          {t('common.cancel')}
         </Button>
         <Button
           variant={destructive ? 'danger' : 'primary'}
           onClick={handleConfirm}
           loading={loading}
         >
-          {confirmLabel}
+          {confirmLabel ?? t('common.confirm')}
         </Button>
       </div>
     </Modal>
